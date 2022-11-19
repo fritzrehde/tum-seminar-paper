@@ -1,0 +1,118 @@
+\documentclass[sigplan,11pt,nonacm]{acmart}
+\settopmatter{printfolios}
+
+\usepackage{booktabs} % For formal tables
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{hyphenat}
+\usepackage{todonotes}
+\usepackage[babel]{csquotes}
+
+
+\begin{document}
+\title{Ownership types in theory and practice (in Rust)}
+\author{Fritz Rehde}
+\affiliation{%
+  \institution{Technical University of Munich}
+}
+\email{fritz.rehde@tum.de}
+
+\begin{abstract}
+% Abstract: Brief summary of area, problem, approach, key result
+
+
+% - what are programming types in general?
+% - why do we need ownership types, what do they do?
+
+
+\end{abstract}
+
+\keywords{Rust, Ownership, Type, Safety}
+
+\maketitle
+
+\section{Introduction}
+\label{sec:introduction}
+% Introduction: introduce area, problem, approach, key results, contributions, outline
+
+
+\section{Background}
+\label{sec:background}
+% Background: if needed, describe prerequisites
+
+\subsection{Memory Safety}
+
+Definition of memory safety\cite{memory1}.
+Why memory safery is important\cite{nsa-memory-safety}.
+
+
+\subsection{History of Ownership Types}
+
+% - when/in which language first introduced?
+% - why slow adoption?
+
+
+\section{Main part}
+\label{sec:mainpart}
+% Main part (approach, evaluation, discussion, etc.)
+
+
+\subsection{Ownership types in theory}
+
+
+\subsection{Implementation in Rust}
+% - borrow checker
+
+Notes from rust-book\cite{rust-book}.
+Ownership definition: set of rules that govern how Rust program manages memory
+Compiler checks rules, if violated program doesn't compile
+Purpose of Rust ownership is to mainly manage heap data
+Ownership rules:
+- each value in Rust has an owner
+- there can only be one owner at a time
+- when the owner goes out of scope, the value will be dropped (value is valid in scope, invalid out of scope)
+Definition scope:
+```
+{                      // s is not valid here, it’s not yet declared
+    let s = "hello";   // s is valid from this point forward
+
+    // do stuff with s
+}                      // this scope is now over, and s is no longer valid
+```
+
+data types of known size at compile time (int, float, bool, char): stored on stack, popped off stack when out of scope, quickly and trivially copied
+
+
+\subsection{Practical examples using Rust}
+% - show common Rust ownership errors
+% - Protection against memory vulnerabilitie examples
+
+
+\subsection{Alternatives}
+% - comparison to alternative type systems without ownership (C/C++: none at all, Java: garbage collection)
+% - choose non-ownership programming language e.g. C++20
+% - compare code examples
+% - compile time differences between Rust and non-ownership lang
+% - runtime differences between Rust and non-ownership lang
+
+
+\section{Related work}
+\label{sec:relatedwork}
+% (In a paper: Related Work – might come before main part)
+
+
+\section{Summary \& Outlook}
+\label{sec:summary}
+
+% Oh, and here goes the summary. Future work is expected in water computers so that programmers can also be productive while swimming.
+
+
+% QUESTIONS:
+% Online article: Should I cite the actual pdf or the website that brought me to the pdf
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{paper} % read paper.bib file
+
+\end{document}
