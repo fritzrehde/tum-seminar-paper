@@ -9,6 +9,23 @@
 \usepackage{hyphenat}
 \usepackage{todonotes}
 \usepackage[babel]{csquotes}
+\usepackage{listings}
+\lstset{frame=tb,
+  language=Rust,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
 
 
 \begin{document}
@@ -21,7 +38,6 @@
 
 \begin{abstract}
 % Abstract: Brief summary of area, problem, approach, key result
-
 
 % - what are programming types in general?
 % - why do we need ownership types, what do they do?
@@ -44,14 +60,16 @@
 
 \subsection{Memory Safety}
 
-Definition of memory safety\cite{memory1}.
-Why memory safery is important\cite{nsa-memory-safety}.
+% source: Definition of memory safety\cite{memory1}.
+% source: Why memory safery is important\cite{nsa-memory-safety}.
 
 
 \subsection{History of Ownership Types}
 
 % - when/in which language first introduced?
 % - why slow adoption?
+
+ % - TODO: source: Standard ML, C++?
 
 
 \section{Main part}
@@ -61,33 +79,38 @@ Why memory safery is important\cite{nsa-memory-safety}.
 
 \subsection{Ownership types in theory}
 
+% - source: \cite{understanding-evolving-rust}
+% - source: \cite{ownership-types-survey}
 
 \subsection{Implementation in Rust}
 % - borrow checker
 
-Notes from rust-book\cite{rust-book}.
-Ownership definition: set of rules that govern how Rust program manages memory
-Compiler checks rules, if violated program doesn't compile
-Purpose of Rust ownership is to mainly manage heap data
-Ownership rules:
-- each value in Rust has an owner
-- there can only be one owner at a time
-- when the owner goes out of scope, the value will be dropped (value is valid in scope, invalid out of scope)
-Definition scope:
-```
-{                      // s is not valid here, it’s not yet declared
-    let s = "hello";   // s is valid from this point forward
+% Notes from rust-book\cite{rust-book}.
+% Ownership definition: set of rules that govern how Rust program manages memory
+% Compiler checks rules, if violated program doesn't compile
+% Purpose of Rust ownership is to mainly manage heap data
+% Ownership rules:
+% - each value in Rust has an owner
+% - there can only be one owner at a time
+% - when the owner goes out of scope, the value will be dropped (value is valid in scope, invalid out of scope)
+% Definition scope:
 
-    // do stuff with s
-}                      // this scope is now over, and s is no longer valid
-```
+% \begin{lstlisting}
+% {                      // s is not valid here, it’s not yet declared
+%     let s = "hello";   // s is valid from this point forward
+%     // do stuff with s
+% }                      // this scope is now over, and s is no longer valid
+% \end{lstlisting}
 
-data types of known size at compile time (int, float, bool, char): stored on stack, popped off stack when out of scope, quickly and trivially copied
+% data types of known size at compile time (int, float, bool, char): stored on stack, popped off stack when out of scope, quickly and trivially copied
+
+% - TODO: more sources
 
 
 \subsection{Practical examples using Rust}
 % - show common Rust ownership errors
 % - Protection against memory vulnerabilitie examples
+% - reference: \cite{rust-by-example}
 
 
 \subsection{Alternatives}
@@ -106,7 +129,6 @@ data types of known size at compile time (int, float, bool, char): stored on sta
 \section{Summary \& Outlook}
 \label{sec:summary}
 
-% Oh, and here goes the summary. Future work is expected in water computers so that programmers can also be productive while swimming.
 
 
 % QUESTIONS:
