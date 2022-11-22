@@ -81,6 +81,29 @@
 
 % - source: \cite{understanding-evolving-rust}
 % - source: \cite{ownership-types-survey}
+% Notes from Ownership Types Survey\cite{ownership-types-survey}
+% before: simply protect fields of an object from external access
+% with OT: also protect objects stored in those fields by claiming ownership of and access to other objects
+% problem OTs solve: object aliasing in OOP
+% bugs due to unintentional aliases, difficult to find
+% potential solutions: banning aliases, clearly advertising aliases, manage and control its effects
+% page 16:
+% 1998: flexible alias protection:
+% limit visibility of changes to objects via aliases
+% by limiting where alias could propagate
+% by limiting the changes that could be observed through alias
+% didn't feature "this"
+% evolved into original OT:
+% owners-as-dominators invariant:
+% - heap divided into next regions (ownership contexts)
+% - OC is set of objects
+% - organised hierarchically: each owned object inside its owner, nesting relationship
+% - each object has one single context
+% - receives permissions to reference objects in other contexts through type
+
+core concept: object ownership: objects owner by other object or entities (global owners, stack-based owners)
+objects in same ownership context: siblings or peers
+
 
 \subsection{Implementation in Rust}
 % - borrow checker
