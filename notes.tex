@@ -1,3 +1,13 @@
+% QUESTIONS:
+% - difference between aliases and references
+% - difference between "a is owner of b" and "b is outside a"
+% - how to reference that a whole paragraph came from one source?
+% - how to incorporate tables?
+% - Online article: Should I cite the actual pdf or the website that brought me to the pdf
+% - british english vs american english spelling of same words?
+
+
+
 \documentclass[sigplan,11pt,nonacm]{acmart}
 \settopmatter{printfolios}
 
@@ -85,6 +95,7 @@
 % by limiting the changes that could be observed through alias
 % didn't feature "this"
 % evolved into original OT:
+
 % owners-as-dominators invariant:
 % - heap divided into next regions (ownership contexts)
 % - OC is set of objects
@@ -92,7 +103,7 @@
 % - each object has one single context
 % - receives permissions to reference objects in other contexts through type
 
-% core concept: object ownership: objects owner by other object or entities (global owners, stack-based owners)
+% core concept: object ownership: objects owned by other object or entities (global owners, stack-based owners)
 % objects in same ownership context: siblings or peers
 
 % control aliasing by removing aliasing
@@ -108,7 +119,7 @@
 % - program heap is tree structured, object is inside its owner
 % - external access only through interface, i.e. owner
 % - rules for a to validly access b: 1. a is owner of b; 2. a and b are siblings; 3. b is outside a
-% - "a is inside b": "a owns b": a = b or a is owned by b, transitive
+% - "a is inside b": "a owned by b": a = b or a is owned by b, transitive
 % - "a is outside b": converse of inside: "b is inside a"
 % - advantages: simple, clear and strong garantee, easy to reason about properties of code
 % - disadvantages: no aliasing => no common idioms; programming more difficult
@@ -136,11 +147,6 @@
 % 4. a is owned by aggregate owner b
 
 
-
-% QUESTIONS:
-% - difference between aliases and references
-% - difference between "a is owner of b" and "b is outside a"
-% - how to reference that a whole paragraph came from one source?
 
 
 \section{Main part}

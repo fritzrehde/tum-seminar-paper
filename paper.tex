@@ -41,15 +41,14 @@
 
 % - why do we need ownership types, what do they do?
 
-Object aliasing is the concept of accessing memory through different symbolic names in object-oriented programming languages.
+Object aliasing is the concept of accessing the same memory through different symbolic names in object-oriented programming languages.
 Many progamming bugs are created through unintentional aliases, which are hard to detect and can lead to unexpected side-effects.
 Ownership types are one solution that attempt to prevent many alias-related bugs.
-There are different specific implementations of ownership types, but the premise is that 
-The premise of ownership types is that not only the fields of an object are protected from external access, but also all (recursively defined) objects stored in those fields.
+The premise of ownership types is that not only the fields of an object are protected from external access, but also all objects stored in those fields.
 This is done by allowing objects to take ownership of other objects.
 % TODO: add citation\cite{ownership-types-survey}
 
-This paper introduces the different kinds of ownership types and explains how the modern programming language Rust uses ownership types to garantue memory safety.
+This paper depicts the different kinds of ownership types and explains how the modern programming language Rust uses ownership types to garantue memory safety.
 
 \end{abstract}
 
@@ -67,131 +66,55 @@ This paper introduces the different kinds of ownership types and explains how th
 \label{sec:background}
 % Background: if needed, describe prerequisites
 
+One of the main goals of ownership types is to improve memory safety.
+Understanding memory-related bugs will, therefore, help in understanding why ownership types are useful.
+
 \subsection{Memory Safety}
 
 % source: Definition of memory safety\cite{memory1}.
 % source: Why memory safery is important\cite{nsa-memory-safety}.
-One of the main goals of ownership types is to improve memory safety.
-% Understanding what memory safety is will, therefore, also help in understanding why ownership types are useful.
 
+Memory safety is defined as ...
+
+\subsection{Domain specific terms}
+
+In the following, some terms that commonly used throughout this paper are explained.
+The core concept of ownership types is that objects can be \emph{owners} of other objects.
+Given objects \emph{a} and \emph{b}, \emph{a} is \emph{inside} \emph{b} if \emph{a} is the same object as \emph{b} or \emph{a} is owned by \emph{b}, transitively.
+The \emph{outside} relation is the converse of the \emph{inside} relation.
+
+In most ownership types variants, the heap is divided into different regions called ownership contexts.
+Each object has one single ownership context, which is the set of all objects it owns.
+Objects that are in the same ownership context are called \emph{siblings} or \emph{peers}.
+\cite{ownership-types-survey}
 
 \subsection{State of the art}
 
 % - when/in which language first introduced?
 % - why slow adoption?
 
- % - TODO: source: Standard ML, C++?
 
-Many different flavours of ownership types have been explored.
 Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling its effects\cite{ownership-types-survey}.
-
-
-
-% - source: \cite{understanding-evolving-rust}
-% - source: \cite{ownership-types-survey}
-% Notes from Ownership Types Survey\cite{ownership-types-survey}
-
-% before: simply protect fields of an object from external access
-% with OT: also protect objects stored in those fields by claiming ownership of and access to other objects
-% problem OTs solve: object aliasing in OOP
-% bugs due to unintentional aliases, difficult to find
-% potential solutions: banning aliases, clearly advertising aliases, manage and control its effects
-% page 16:
-% 1998: flexible alias protection:
-% limit visibility of changes to objects via aliases
-% by limiting where alias could propagate
-% by limiting the changes that could be observed through alias
-% didn't feature "this"
-% evolved into original OT:
-% owners-as-dominators invariant:
-% - heap divided into next regions (ownership contexts)
-% - OC is set of objects
-% - organised hierarchically: each owned object inside its owner, nesting relationship
-% - each object has one single context
-% - receives permissions to reference objects in other contexts through type
-
-% core concept: object ownership: objects owner by other object or entities (global owners, stack-based owners)
-% objects in same ownership context: siblings or peers
-
-% control aliasing by removing aliasing
-% unique references: only reference to object in system
-% borrowing: 
-% - reference to owned object temporarily passed to another object (for method call)
-% - method over => all temporary references vanish/unusable
-
-% control aliasing by controlling effects of aliasing
-% immutability: state cannot change
-
-% owners-as-dominators
-% - program heap is tree structured, object is inside its owner
-% - external access only through interface, i.e. owner
-% - rules for a to validly access b: 1. a is owner of b; 2. a and b are siblings; 3. b is outside a
-% - "a is inside b": "a owns b": a = b or a is owned by b, transitive
-% - "a is outside b": converse of inside: "b is inside a"
-% - advantages: simple, clear and strong garantee, easy to reason about properties of code
-% - disadvantages: no aliasing => no common idioms; programming more difficult
-
-% owners-as-modifiers
-% - weaker form of owners-as-dominators, allows read-only references
-% - read-only reference: only used to read fields, call pure methods (may not modify any existing object, including receiver)
-% - aliasing unrestricted, but only owner can modify
-% - usecase: requirements from verification of object-oriented programs
-% - rules for a to validly reference b through reference r: either
-% 1. a is owner of b
-% 2. a and b are siblings
-% 3. b is outside a
-% 4. r is read-only reference and only pure methods can be called
-
-% ownership domains:
-
-% owners-as-ombudsmen:
-% - problem: strong topological requirement: tree structure: some idioms don't fit in tree structure
-% - allow multiple objects to define a shared aggregate owner
-% - rules for a to validly reference b through reference r: either
-% 1. a is owner of b
-% 2. a and b are siblings
-% 3. b is outside a
-% 4. a is owned by aggregate owner b
-
-
-
-% QUESTIONS:
-% - difference between aliases and references
-% - difference between "a is owner of b" and "b is outside a"
-% - how to reference that a whole paragraph came from one source?
+Many different flavours of ownership types have been explored.
+In this paper, state of the art implementations of the general concept such as owners-as-dominators, owners-as-modifiers and owners-as-ombudsmen will be explored further.
+These approaches differ in how much, if any, references/aliases they allow.
 
 
 \section{Main part}
 \label{sec:mainpart}
 % Main part (approach, evaluation, discussion, etc.)
 
-
 \subsection{Ownership types in theory}
 
 
+\subsection{Owners-as-dominators}
+
+One such flavour is the owners-as-dominators\cite{ownership-types-survey} invariant, where the heap is structured as a tree with each object being inside its owner.
+External access is therefore only possible through the owner.
+
+
+
 \subsection{Implementation in Rust}
-% - borrow checker
-
-% Notes from rust-book\cite{rust-book}.
-% Ownership definition: set of rules that govern how Rust program manages memory
-% Compiler checks rules, if violated program doesn't compile
-% Purpose of Rust ownership is to mainly manage heap data
-% Ownership rules:
-% - each value in Rust has an owner
-% - there can only be one owner at a time
-% - when the owner goes out of scope, the value will be dropped (value is valid in scope, invalid out of scope)
-% Definition scope:
-
-% \begin{lstlisting}
-% {                      // s is not valid here, it’s not yet declared
-%     let s = "hello";   // s is valid from this point forward
-%     // do stuff with s
-% }                      // this scope is now over, and s is no longer valid
-% \end{lstlisting}
-
-% data types of known size at compile time (int, float, bool, char): stored on stack, popped off stack when out of scope, quickly and trivially copied
-
-% - TODO: more sources
 
 
 \subsection{Practical examples using Rust}
@@ -217,9 +140,6 @@ Potential solutions to the aliasing problem include banning aliases altogether, 
 \label{sec:summary}
 
 
-
-% QUESTIONS:
-% Online article: Should I cite the actual pdf or the website that brought me to the pdf
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{paper} % read paper.bib file
