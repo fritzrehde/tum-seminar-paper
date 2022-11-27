@@ -96,8 +96,9 @@ Objects that are in the same ownership context are called \emph{siblings} or \em
 
 Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling its effects\cite{ownership-types-survey}.
 Many different flavours of ownership types have been explored.
-In this paper, state of the art implementations of the general concept such as owners-as-dominators, owners-as-modifiers and owners-as-ombudsmen will be explored further.
-These approaches differ in how much, if any, references/aliases they allow.
+In this paper, state of the art implementations of the ownership type concept such as owners-as-dominators, owners-as-modifiers and owners-as-ombudsmen will be explored further.
+These approaches differ in how what kind of, if any, aliases they allow.
+\cite{ownership-types-survey}
 
 
 \section{Main part}
@@ -107,12 +108,38 @@ These approaches differ in how much, if any, references/aliases they allow.
 \subsection{Ownership types in theory}
 
 
-\subsection{Owners-as-dominators}
+% TODO: second source to provide more detail of each owners-as-...
+% TODO: find more varied words to classify these approaches as: principle, approach, model
+
+\subsubsection{Owners-as-dominators}
 
 One such flavour is the owners-as-dominators\cite{ownership-types-survey} invariant, where the heap is structured as a tree with each object being inside its owner.
 External access is therefore only possible through the owner.
+The rules that must be fulfilled for \emph{a} to validly reference \emph{b} are that either \emph{a} is owned by \emph{b}, \emph{a} and \emph{b} are siblings or \emph{b} is outside \emph{a}.
+% TODO: more detail
+
+The owners-as-dominators principle provides a simple, clear and strong guarantee, but makes programming more difficult by not allowing common idioms through aliasing.
+\cite{ownership-types-survey}
 
 
+\subsubsection{Owners-as-modifiers}
+
+Another kind is the owners-as-modifiers model, which is a weaker form owners-as-dominators that additionally allows read-only references.
+A read-only reference can only be used to read files and call pure methods, which may not modify any existing objects.
+In essence, aliasing is unrestricted, but only the owner of an object can modify it.
+If none of the rules that were specified for owners-as-dominators are adhered to, for \emph{a} to validly reference \emph{b} through reference \emph{r}, \emph{r} has to be a read-only reference and only pure methods can be called on it.
+% TODO: more detail
+
+The owners-as-modifiers principle expands the programming possibilities of the owners-as-modifiers principle and fulfills the requirements of verification of object-oriented programs.
+
+\cite{ownership-types-survey}
+
+
+\subsubsection{Owners-as-ombudsmen}
+
+
+
+\cite{ownership-types-survey}
 
 \subsection{Implementation in Rust}
 
