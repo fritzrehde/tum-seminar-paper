@@ -41,16 +41,6 @@
 
 % - why do we need ownership types, what do they do?
 
-Object aliasing is the concept of accessing memory through different symbolic names in object-oriented programming languages.
-Many progamming bugs are created through unintentional aliases, which are hard to detect and can lead to unexpected side-effects.
-Ownership types are one solution that attempt to prevent many alias-related bugs.
-There are different specific implementations of ownership types, but the premise is that 
-The premise of ownership types is that not only the fields of an object are protected from external access, but also all (recursively defined) objects stored in those fields.
-This is done by allowing objects to take ownership of other objects.
-% TODO: add citation\cite{ownership-types-survey}
-
-This paper introduces the different kinds of ownership types and explains how the modern programming language Rust uses ownership types to garantue memory safety.
-
 \end{abstract}
 
 \keywords{Ownership, Type, Safety, Rust}
@@ -61,7 +51,6 @@ This paper introduces the different kinds of ownership types and explains how th
 \label{sec:introduction}
 % Introduction: introduce area, problem, approach, key results, contributions, outline
 
-% TODO: write something
 
 \section{Background}
 \label{sec:background}
@@ -71,8 +60,6 @@ This paper introduces the different kinds of ownership types and explains how th
 
 % source: Definition of memory safety\cite{memory1}.
 % source: Why memory safery is important\cite{nsa-memory-safety}.
-One of the main goals of ownership types is to improve memory safety.
-% Understanding what memory safety is will, therefore, also help in understanding why ownership types are useful.
 
 
 \subsection{State of the art}
@@ -81,11 +68,6 @@ One of the main goals of ownership types is to improve memory safety.
 % - why slow adoption?
 
  % - TODO: source: Standard ML, C++?
-
-Many different flavours of ownership types have been explored.
-Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling its effects\cite{ownership-types-survey}.
-
-
 
 % - source: \cite{understanding-evolving-rust}
 % - source: \cite{ownership-types-survey}
