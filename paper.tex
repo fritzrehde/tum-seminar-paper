@@ -124,9 +124,11 @@ The owners-as-dominators principle provides a simple, clear and strong guarantee
 
 \subsubsection{Owners-as-modifiers}
 
-Another kind is the owners-as-modifiers model, which is a weaker form owners-as-dominators that additionally allows read-only references.
+Another kind is the owners-as-modifiers model, which is a weaker form of owners-as-dominators that additionally allows read-only references.
 A read-only reference can only be used to read files and call pure methods, which may not modify any existing objects.
 In essence, aliasing is unrestricted, but only the owner of an object can modify it.
+% TODO: unclear sentence structure
+Owners-as-modifiers extend the rules specified for owners-as-dominators.
 If none of the rules that were specified for owners-as-dominators are adhered to, for \emph{a} to validly reference \emph{b} through reference \emph{r}, \emph{r} has to be a read-only reference and only pure methods can be called on it.
 % TODO: more detail
 
@@ -137,6 +139,12 @@ The owners-as-modifiers principle expands the programming possibilities of the o
 
 \subsubsection{Owners-as-ombudsmen}
 
+% TODO: definition of ombudsmen for context
+A last flavour of ownership types is the owners-as-ombudsmen approach, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
+% TODO: examples
+This is achieved by allowing multiple objects to define a shared aggregate owner.
+% TODO: what is aggregate owner
+In addition to the rules stated for owners-as-dominators, \emph{a} has to be owned by aggregate owner \emph{b} for \emph{a} to validly reference \emph{b} through reference \emph{r}.
 
 
 \cite{ownership-types-survey}
