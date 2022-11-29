@@ -51,7 +51,7 @@
 \begin{abstract}
 % Abstract: Brief summary of area, problem, approach, key result
 
-% - why do we need ownership types, what do they do?
+- why do we need ownership types, what do they do?
 
 \end{abstract}
 
@@ -70,83 +70,83 @@
 
 \subsection{Memory Safety}
 
-% source: Definition of memory safety\cite{memory1}.
-% source: Why memory safery is important\cite{nsa-memory-safety}.
+source: Definition of memory safety\cite{memory1}.
+source: Why memory safery is important\cite{nsa-memory-safety}.
 
 
 \subsection{State of the art}
 
-% - when/in which language first introduced?
-% - why slow adoption?
+- when/in which language first introduced?
+- why slow adoption?
 
- % - TODO: source: Standard ML, C++?
+ - TODO: source: Standard ML, C++?
 
-% - source: \cite{understanding-evolving-rust}
-% - source: \cite{ownership-types-survey}
-% Notes from Ownership Types Survey\cite{ownership-types-survey}
+- source: \cite{understanding-evolving-rust}
+- source: \cite{ownership-types-survey}
+Notes from Ownership Types Survey\cite{ownership-types-survey}
 
-% before: simply protect fields of an object from external access
-% with OT: also protect objects stored in those fields by claiming ownership of and access to other objects
-% problem OTs solve: object aliasing in OOP
-% bugs due to unintentional aliases, difficult to find
-% potential solutions: banning aliases, clearly advertising aliases, manage and control its effects
-% page 16:
-% 1998: flexible alias protection:
-% limit visibility of changes to objects via aliases
-% by limiting where alias could propagate
-% by limiting the changes that could be observed through alias
-% didn't feature "this"
-% evolved into original OT:
+before: simply protect fields of an object from external access
+with OT: also protect objects stored in those fields by claiming ownership of and access to other objects
+problem OTs solve: object aliasing in OOP
+bugs due to unintentional aliases, difficult to find
+potential solutions: banning aliases, clearly advertising aliases, manage and control its effects
+page 16:
+1998: flexible alias protection:
+limit visibility of changes to objects via aliases
+by limiting where alias could propagate
+by limiting the changes that could be observed through alias
+didn't feature "this"
+evolved into original OT:
 
-% owners-as-dominators invariant:
-% - heap divided into next regions (ownership contexts)
-% - OC is set of objects
-% - organised hierarchically: each owned object inside its owner, nesting relationship
-% - each object has one single context
-% - receives permissions to reference objects in other contexts through type
+owners-as-dominators invariant:
+- heap divided into next regions (ownership contexts)
+- OC is set of objects
+- organised hierarchically: each owned object inside its owner, nesting relationship
+- each object has one single context
+- receives permissions to reference objects in other contexts through type
 
-% core concept: object ownership: objects owned by other object or entities (global owners, stack-based owners)
-% objects in same ownership context: siblings or peers
+core concept: object ownership: objects owned by other object or entities (global owners, stack-based owners)
+objects in same ownership context: siblings or peers
 
-% control aliasing by removing aliasing
-% unique references: only reference to object in system
-% borrowing: 
-% - reference to owned object temporarily passed to another object (for method call)
-% - method over => all temporary references vanish/unusable
+control aliasing by removing aliasing
+unique references: only reference to object in system
+borrowing: 
+- reference to owned object temporarily passed to another object (for method call)
+- method over => all temporary references vanish/unusable
 
-% control aliasing by controlling effects of aliasing
-% immutability: state cannot change
+control aliasing by controlling effects of aliasing
+immutability: state cannot change
 
-% owners-as-dominators
-% - program heap is tree structured, object is inside its owner
-% - external access only through interface, i.e. owner
-% - rules for a to validly access b: 1. a is owner of b; 2. a and b are siblings; 3. b is outside a
-% - "a is inside b": "a owned by b": a = b or a is owned by b, transitive
-% - "a is outside b": converse of inside: "b is inside a"
-% - advantages: simple, clear and strong garantee, easy to reason about properties of code
-% - disadvantages: no aliasing => no common idioms; programming more difficult
+owners-as-dominators
+- program heap is tree structured, object is inside its owner
+- external access only through interface, i.e. owner
+- rules for a to validly access b: 1. a is owner of b; 2. a and b are siblings; 3. b is outside a
+- "a is inside b": "a owned by b": a = b or a is owned by b, transitive
+- "a is outside b": converse of inside: "b is inside a"
+- advantages: simple, clear and strong garantee, easy to reason about properties of code
+- disadvantages: no aliasing => no common idioms; programming more difficult
 
-% owners-as-modifiers
-% - weaker form of owners-as-dominators, allows read-only references
-% - read-only reference: only used to read fields, call pure methods (may not modify any existing object, including receiver)
-% - aliasing unrestricted, but only owner can modify
-% - usecase: requirements from verification of object-oriented programs
-% - rules for a to validly reference b through reference r: either
-% 1. a is owner of b
-% 2. a and b are siblings
-% 3. b is outside a
-% 4. r is read-only reference and only pure methods can be called
+owners-as-modifiers
+- weaker form of owners-as-dominators, allows read-only references
+- read-only reference: only used to read fields, call pure methods (may not modify any existing object, including receiver)
+- aliasing unrestricted, but only owner can modify
+- usecase: requirements from verification of object-oriented programs
+- rules for a to validly reference b through reference r: either
+1. a is owner of b
+2. a and b are siblings
+3. b is outside a
+4. r is read-only reference and only pure methods can be called
 
-% ownership domains:
+ownership domains:
 
-% owners-as-ombudsmen:
-% - problem: strong topological requirement: tree structure: some idioms don't fit in tree structure
-% - allow multiple objects to define a shared aggregate owner
-% - rules for a to validly reference b through reference r: either
-% 1. a is owner of b
-% 2. a and b are siblings
-% 3. b is outside a
-% 4. a is owned by aggregate owner b
+owners-as-ombudsmen:
+- problem: strong topological requirement: tree structure: some idioms don't fit in tree structure
+- allow multiple objects to define a shared aggregate owner
+- rules for a to validly reference b through reference r: either
+1. a is owner of b
+2. a and b are siblings
+3. b is outside a
+4. a is owned by aggregate owner b
 
 
 
@@ -160,26 +160,68 @@
 
 
 \subsection{Implementation in Rust}
-% - borrow checker
+- borrow checker
 
-% Notes from rust-book\cite{rust-book}.
-% Ownership definition: set of rules that govern how Rust program manages memory
-% Compiler checks rules, if violated program doesn't compile
-% Purpose of Rust ownership is to mainly manage heap data
-% Ownership rules:
-% - each value in Rust has an owner
-% - there can only be one owner at a time
-% - when the owner goes out of scope, the value will be dropped (value is valid in scope, invalid out of scope)
-% Definition scope:
+Notes from rust-book\cite{rust-book}.
+Ownership definition: set of rules that govern how Rust program manages memory
+Compiler checks rules, if violated program doesn't compile
+Purpose of Rust ownership is to mainly manage heap data
+TODO: contradiction to below: value can be invalid in scope
+Ownership rules:
+- each value in Rust has an owner
+- there can only be one owner at a time
+- when the owner goes out of scope, the value will be dropped (value is valid in scope, invalid out of scope)
+Definition scope:
 
-% \begin{lstlisting}
-% {                      // s is not valid here, it’s not yet declared
-%     let s = "hello";   // s is valid from this point forward
-%     // do stuff with s
-% }                      // this scope is now over, and s is no longer valid
-% \end{lstlisting}
+\begin{lstlisting}
+{                      // s is not valid here, it’s not yet declared
+    let s = "hello";   // s is valid from this point forward
+    // do stuff with s
+}                      // this scope is now over, and s is no longer valid
+\end{lstlisting}
 
-% data types of known size at compile time (int, float, bool, char): stored on stack, popped off stack when out of scope, quickly and trivially copied
+data types of known size at compile time (int, float, bool, char): stored on stack, popped off stack when out of scope, quickly and trivially copied
+heap: mutable data
+stack: immutable data, size known at compile time
+requirements of memory allocation system:
+1. memory must be requested from memory allocator at runtime
+2. need way of returning/freeing memory when done using it
+
+First part is trivial
+Second part: other solutions:
+1. garbage collector: keeps track of and cleans up memory isn't used anymore (we don't need to think about it/do anything)
+2. without GC, traditional: explicitly free memory
+- difficult
+- if forget, waste memory
+- if too early, invalid variable
+- if free twice, bug
+=> need to pair one allocate with exactly one free
+Rust: memory is automatically freed once variable that owns it goes out of scope
+Rust calls `drop` automatically at end of every scope
+
+Move:
+simple (find different word) data that is stored on stack: data is copied
+example:
+\begin{lstlisting}
+let x: i32 = 42;
+let y: i32 = x;
+\end{lstlisting}
+
+For datastructures stored on the heap like String:
+
+\begin{lstlisting}
+let x: String = String::from("hello world");
+let y: String = x;
+\end{lstlisting}
+
+similar to shallow copy of fields stored on stack (pointer to memory in heap, maybe length or capacity as well).
+Assumption: both x and y point to the same memory in the heap.
+what happens when they go out of scope, what is freed?
+One object cannot have two owners.
+In rust: variable x is moved into y = y becomes the new owner of the object and x is invalid
+
+
+
 
 % - TODO: more sources
 

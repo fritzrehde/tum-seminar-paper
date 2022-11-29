@@ -110,6 +110,7 @@ These approaches differ in how what kind of, if any, aliases they allow.
 
 % TODO: second source to provide more detail of each owners-as-...
 % TODO: find more varied words to classify these approaches as: principle, approach, model
+% TODO: maybe add numbered list (like in source material) for the rules like in the Rust section
 
 \subsubsection{Owners-as-dominators}
 
@@ -129,7 +130,8 @@ A read-only reference can only be used to read files and call pure methods, whic
 In essence, aliasing is unrestricted, but only the owner of an object can modify it.
 % TODO: unclear sentence structure
 Owners-as-modifiers extend the rules specified for owners-as-dominators.
-If none of the rules that were specified for owners-as-dominators are adhered to, for \emph{a} to validly reference \emph{b} through reference \emph{r}, \emph{r} has to be a read-only reference and only pure methods can be called on it.
+For \emph{a} to validly reference \emph{b} through reference \emph{r}, onwers-as-modifiers follows the same rules as owners-as-dominators.
+The only addition is that, if none of the owners-as-dominators rules are upheld, \emph{r} can also be valid by being a read-only reference and only pure methods being called on it.
 % TODO: more detail
 
 The owners-as-modifiers principle expands the programming possibilities of the owners-as-modifiers principle and fulfills the requirements of verification of object-oriented programs.
@@ -144,12 +146,82 @@ A last flavour of ownership types is the owners-as-ombudsmen approach, which all
 % TODO: examples
 This is achieved by allowing multiple objects to define a shared aggregate owner.
 % TODO: what is aggregate owner
-In addition to the rules stated for owners-as-dominators, \emph{a} has to be owned by aggregate owner \emph{b} for \emph{a} to validly reference \emph{b} through reference \emph{r}.
-
+Extending the rules stated for owners-as-dominators, \emph{a} can also validly reference \emph{b} if \emph{a} is owned by aggregate owner \emph{b}.
 
 \cite{ownership-types-survey}
 
 \subsection{Implementation in Rust}
+
+There are two major requirements that a memory allocation system must fulfill:
+At runtime, memory can be requested from the memory allocator and there exists a mechanism for memory to be freed by the memory allocator.
+
+The first requirement is trivial.
+
+% TODO: find source for both garbage collection and manual freeing
+One possible implementation of the second requirement is using a garbage collector, which keeps track of and cleans up memory that is no longer used.
+% TODO: find source for GC disadvantages
+This, however, has a runtime performance overhead and can lead to a non-deterministic cleanup of resources.
+
+% TODO: find source for manual free disadvantages
+Another more traditional solution is requiring memory to be freed explicitly.
+This is a notorious source of bugs.
+If memory is never freed because it was forgotten, memory is wasted.
+If it is freed multiple times or accessed again after having been freed, it will result in undefined behaviour.
+
+The ideal solution pairs one \emph{allocate} with exactly one \emph{free}.
+Rust uses neither a garbage collector nor requires memory to be freed manually.
+Instead, the concept of ownership is leveraged to determine when to free memory.
+
+The Rust book \cite{rust-book} defines ownership as a set of rules that govern how it manages memory.
+The compiler checks whether these rules are adhered to, and does not compile the program if they are violated.
+The ownership rules in Rust are as follows:
+\begin{enumerate}
+  \item Each value in Rust has an owner.
+  \item There can only be one owner at a time.
+  \item When the owner goes out of scope, the value will be \emph{dropped}.
+\end{enumerate}
+% Rust automatically calls the function \emph{drop} when a variable goes out of scope, which frees the memory of the value that is owned by that variable.
+% TODO: is a variable really an owner of a value? Possibly change term variable
+The scope of a value is the range within a program in which it is valid.
+Rust automatically calls the function \emph{drop}, which frees the associated memory, when a variable goes out of scope.
+
+The following describes the concepts of how variables and memory interact in Rust.
+\cite{rust-book}
+
+\subsubsection{Move}
+
+% TODO: wording of value and types used interchangedly here, maybe incorrect
+First, one must differentiate between values that are stored on the stack and those stored on the heap.
+
+The primitive data types (e.g. signed 32 bit integers \emph{i32}) are immutable by default and stored on the stack since their sizes are small and known at compile time.
+Values are stored on the heap if their size is dynamic and therefore not known at compile time.
+
+The different representations of strings in Rust provide a good example.
+Rust supports the immutable string literals \emph{\&str}, which are stored on the stack, and the type \emph{String}, which is stored as a vector of bytes, heap allocated, and therefore growable. \cite{rust-by-example}
+
+The \emph{String} type in Rust is a good example of such a type.
+\begin{lstlisting}
+let x: String = String::from("hello world");
+let y: String = x;
+\end{lstlisting}
+
+
+% This, however, applies only to data types that are stored on the heap.
+
+In the following piece of Rust code, one variable is assigned to another.
+\begin{lstlisting}
+let x: &str = "hello world";
+let y: &str = x;
+\end{lstlisting}
+Since their sizes are known at compile time, they are simply copied into a new variable instead of moved.
+
+
+\subsubsection{Clone}
+
+By default and by design, Rust will never automatically create deep copies of data stored on the heap.
+To do so, one must explicitly call the \emph{clone} method on an object.
+
+\cite{rust-book}
 
 
 \subsection{Practical examples using Rust}
