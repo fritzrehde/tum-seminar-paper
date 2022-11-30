@@ -39,7 +39,7 @@
 \begin{abstract}
 % Abstract: Brief summary of area, problem, approach, key result
 
-% - why do we need ownership types, what do they do?
+% why do we need ownership types, what do they do?
 
 Object aliasing is the concept of accessing the same memory through different symbolic names in object-oriented programming languages.
 Many progamming bugs are created through unintentional aliases, which are hard to detect and can lead to unexpected side-effects.
@@ -48,7 +48,8 @@ The premise of ownership types is that not only the fields of an object are prot
 This is done by allowing objects to take ownership of other objects.
 % TODO: add citation\cite{ownership-types-survey}
 
-This paper depicts the different kinds of ownership types and explains how the modern programming language Rust uses ownership types to garantue memory safety.
+% This paper depicts the different kinds of ownership types and explains how the modern programming language Rust uses ownership types to garantee memory safety.
+This paper depicts the different kinds of ownership types and explains how the modern programming language Rust uses ownership types.
 
 \end{abstract}
 
@@ -61,6 +62,7 @@ This paper depicts the different kinds of ownership types and explains how the m
 % Introduction: introduce area, problem, approach, key results, contributions, outline
 
 % TODO: write something
+
 
 \section{Background}
 \label{sec:background}
@@ -76,28 +78,29 @@ Understanding memory-related bugs will, therefore, help in understanding why own
 
 Memory safety is defined as ...
 
+
 \subsection{Domain specific terms}
 
-In the following, some terms that commonly used throughout this paper are explained.
+In the following, some terms that are commonly used throughout this paper are explained.
 The core concept of ownership types is that objects can be \emph{owners} of other objects.
-Given objects \emph{a} and \emph{b}, \emph{a} is \emph{inside} \emph{b} if \emph{a} is the same object as \emph{b} or \emph{a} is owned by \emph{b}, transitively.
+Given objects \emph{a} and \emph{b}, \emph{a} is \emph{inside} \emph{b} if \emph{a} is the same object as \emph{b} or \emph{a} is \emph{owned} by \emph{b}, transitively.
 The \emph{outside} relation is the converse of the \emph{inside} relation.
 
-In most ownership types variants, the heap is divided into different regions called ownership contexts.
+In most ownership type variants, the heap is divided into different regions called ownership contexts.
 Each object has one single ownership context, which is the set of all objects it owns.
 Objects that are in the same ownership context are called \emph{siblings} or \emph{peers}.
 \cite{ownership-types-survey}
+
 
 \subsection{State of the art}
 
 % - when/in which language first introduced?
 % - why slow adoption?
 
-
 Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling its effects\cite{ownership-types-survey}.
 Many different flavours of ownership types have been explored.
-In this paper, state of the art implementations of the ownership type concept such as owners-as-dominators, owners-as-modifiers and owners-as-ombudsmen will be explored further.
-These approaches differ in how what kind of, if any, aliases they allow.
+In this paper, state of the art implementations of the ownership types concept such as owners-as-dominators, owners-as-modifiers and owners-as-ombudsmen will be explored further.
+These approaches differ in what kind of, if any, aliases they allow.
 \cite{ownership-types-survey}
 
 
@@ -106,7 +109,6 @@ These approaches differ in how what kind of, if any, aliases they allow.
 % Main part (approach, evaluation, discussion, etc.)
 
 \subsection{Ownership types in theory}
-
 
 % TODO: second source to provide more detail of each owners-as-...
 % TODO: find more varied words to classify these approaches as: principle, approach, model
@@ -130,11 +132,11 @@ A read-only reference can only be used to read files and call pure methods, whic
 In essence, aliasing is unrestricted, but only the owner of an object can modify it.
 % TODO: unclear sentence structure
 Owners-as-modifiers extend the rules specified for owners-as-dominators.
-For \emph{a} to validly reference \emph{b} through reference \emph{r}, onwers-as-modifiers follows the same rules as owners-as-dominators.
-The only addition is that, if none of the owners-as-dominators rules are upheld, \emph{r} can also be valid by being a read-only reference and only pure methods being called on it.
+For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-modifiers follows the same rules as owners-as-dominators.
+The only addition is that \emph{r} can also be a valid reference if it is a read-only reference and only pure methods are being called on it.
 % TODO: more detail
 
-The owners-as-modifiers principle expands the programming possibilities of the owners-as-modifiers principle and fulfills the requirements of verification of object-oriented programs.
+The owners-as-modifiers principle expands the programming possibilities of the owners-as-modifiers principle and fulfills the requirements needed for the verification of object-oriented programs.
 
 \cite{ownership-types-survey}
 
@@ -149,6 +151,11 @@ This is achieved by allowing multiple objects to define a shared aggregate owner
 Extending the rules stated for owners-as-dominators, \emph{a} can also validly reference \emph{b} if \emph{a} is owned by aggregate owner \emph{b}.
 
 \cite{ownership-types-survey}
+
+
+\subsection{Application of Ownership Types}
+
+% TODO: chapter 6 of ownership-types-survey
 
 \subsection{Implementation in Rust}
 
@@ -184,7 +191,6 @@ The ownership rules in Rust are as follows:
 % TODO: is a variable really an owner of a value? Possibly change term variable
 The scope of a value is the range within a program in which it is valid.
 Rust automatically calls the function \emph{drop}, which frees the associated memory, when a variable goes out of scope.
-
 
 The following describes how the concept of ownership is implemented in Rust.
 
@@ -250,6 +256,7 @@ println!("x: {}, y: {}", x, y);
 After \emph{x} is moved into \emph{y} in line 2, \emph{x} is no longer valid.
 Therefore, Rust prevents you from accessing the invalid \emph{x} in the third line, and the program will not compile.
 
+
 % TODO: explain what Rust traits are
 \paragraph{Stack-based values}
 
@@ -269,8 +276,8 @@ println!("x: {}, y: {}", x, y);
 \end{lstlisting}
 The value of \emph{x} is copied into \emph{y}, after which both variables are still valid.
 Therefore, the program compiles and "x: hello world, y: hello world" is printed to stdout.
-
 \cite{rust-book}
+
 
 \subsection{The Clone trait}
 
@@ -286,32 +293,19 @@ println!("x: {}, y: {}", x, y);
 
 The ownership of a value is not only transferred during the assignment to another variable, but also when it is passed to a function as a parameter and when it is returned from a function.
 
-
-
 \cite{rust-book}
 
 
 \subsubsection{References/Aliases}
 
-
 \cite{rust-book}
 
 \subsubsection{Borrowing}
-
 
 \cite{rust-book}
 
 
 \subsubsection{Slice type}
-
-
-\cite{rust-book}
-
-
-
-
-
-
 
 \cite{rust-book}
 
