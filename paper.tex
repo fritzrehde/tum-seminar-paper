@@ -209,7 +209,7 @@ println!("x: {}, y: {}", x, y);
 Since \emph{x} has a known, fixed size, its value is simply copied into \emph{y}.
 Therefore, the program compiles and, as expected, "x: hello world, y: hello world" is printed to stdout.
 % TODO: explain what Rust traits are
-Internally, these primitive types are annotated with the \emph{Copy} trait, which specifies that 
+Internally, these primitive types are annotated with the \emph{Copy} trait, which specifies that variables are trivially copied instead of moved.
 
 However, a similar code snippet that replaces the string literal with the \emph{String} type behaves differently.
 \begin{lstlisting}
@@ -224,6 +224,8 @@ Thus, copying the whole string into \emph{y} could be very inefficient.
 And, since the \emph{String} value can only have one owner, it is \emph{moved} into \emph{y}, which will become its new owner.
 After the move, \emph{x} is no longer valid.
 Because Rust prevents you from using the invalid reference to \emph{x} in the third line, the program will not compile.
+
+\cite{rust-book}
 
 % TODO: add section explaing borrowing, since it's related ot move
 
@@ -242,6 +244,14 @@ println!("x: {}, y: {}", x, y);
 
 \cite{rust-book}
 
+\subsubsection{Functions and return values}
+
+Just like a value is moved into the variable it is assigned to, a value is also moved into the function that it is passed as a parameter to.
+
+In both case, as with variable assignment, values stored on the stack are copied instead of moved.
+
+
+\cite{rust-book}
 
 \subsection{Practical examples using Rust}
 % - show common Rust ownership errors
