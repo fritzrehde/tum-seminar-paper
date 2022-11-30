@@ -247,43 +247,30 @@ let x: String = String::from("hello world");
 let y: String = x;
 println!("x: {}, y: {}", x, y);
 \end{lstlisting}
-% Since the \emph{String} value can only have one owner, it is \emph{moved} into \emph{y}, which will become its new owner.
 After \emph{x} is moved into \emph{y} in line 2, \emph{x} is no longer valid.
 Therefore, Rust prevents you from accessing the invalid \emph{x} in the third line, and the program will not compile.
 
+% TODO: explain what Rust traits are
 \paragraph{Stack-based values}
 
 In contrast to heap-based values, the size of stack-based values is known at compile time and usually small.
-Therefore, stack-based values in Rust are copied instead of moved.
+Therefore, stack-based values in Rust are \emph{copied} instead of \emph{moved}.
 % TODO: reformulate
-Internally, primitive types are annotated with the \emph{Copy} trait, which specifies that variables are trivially copied instead of moved.
+Internally, this works because primitive types are annotated with and implement the \emph{Copy} trait.
 
+% The two main representations of strings in Rust provide a good example.
+Besides the heap-allocated \emph{String} type, Rust also supports immutable string literals \emph{\&str}, which are stored on the stack.
 
-% The following example illustrates that the ownership of stack-based values is not transferred.
-% \begin{lstlisting}
-% let x = 5;
-% let y = x;
-% y = y + 1;
-% assert_eq!(x, 5)
-% \end{lstlisting}
-
-The following piece of code demonstrates how primitive stack-based values are \emph{moved} into other variables in Rust.
+The following piece of code, which is similar to the code from above but replaces the \emph{String} type with string literals, demonstrates how stack-based string literals are \emph{copied} instead of \emph{moved} into other variables in Rust.
 \begin{lstlisting}
 let x: &str = "hello world";
 let y: &str = x;
 println!("x: {}, y: {}", x, y);
 \end{lstlisting}
-Since \emph{x} has a known, fixed size, its value is simply copied into \emph{y}.
-Therefore, the program compiles and, as expected, "x: hello world, y: hello world" is printed to stdout.
-% TODO: explain what Rust traits are
+The value of \emph{x} is copied into \emph{y}, after which both variables are still valid.
+Therefore, the program compiles and "x: hello world, y: hello world" is printed to stdout.
 
 \cite{rust-book}
-
-
-
-
-% The two main representations of strings in Rust provide a good example.
-% Rust supports immutable string literals \emph{\&str}, which are stored on the stack, and objects of type \emph{String}, which are stored as a vector of bytes on the heap and are, therefore, growable. \cite{rust-by-example}
 
 \subsection{The Clone trait}
 
