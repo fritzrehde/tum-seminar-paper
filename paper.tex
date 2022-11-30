@@ -185,14 +185,12 @@ The ownership rules in Rust are as follows:
 The scope of a value is the range within a program in which it is valid.
 Rust automatically calls the function \emph{drop}, which frees the associated memory, when a variable goes out of scope.
 
-% TODO: source
-In addition to providing the memory safety that ownership types provide, ownership transfers can also reduce redundant copy operations.
-Since heap-based values could be arbitrarily large at runtime, copying the whole value instead of transferring ownership could be very inefficient.
 
 The following describes how the concept of ownership is implemented in Rust.
 
 % TODO: wording of value and types used interchangedly here, maybe incorrect
 % TODO: maybe add defintion of ownership transfer if not obvious
+% TODO: go into detail on how heap types are stored on heap. some constant fields are actually stored on stack (string: pointer, size, capacity)
 \subsubsection{Transferring ownership}
 
 First, one must differentiate between values that are stored on the stack and those stored on the heap.
@@ -203,9 +201,13 @@ The ownership concepts in Rust mostly apply to values stored on the heap.
 
 \paragraph{Heap-based variables}
 
+% TODO: source
+In addition to the memory safety that ownership types provide, ownership transfers can also reduce redundant copy operations.
+Since heap-based values could be arbitrarily large at runtime, copying the whole value instead of transferring ownership could be very inefficient.
 There are several different scenarios in which ownership is transferred.
 
 In the simplest scenario, ownership is transferred from the variable \emph{a} to the variable \emph{b} when \emph{b} is assigned to \emph{a}.
+% TODO: footnote that main class etc. have been omitted for sake of simplicity
 \begin{lstlisting}
 let a = HeapBasedType::default();
 let b = a;
@@ -239,34 +241,51 @@ In \emph{foo}, \emph{b} is the owner of the value until it is \emph{dropped} at 
 Accessing the previous owner of a value after the ownership of that value has been transferred elsewhere will lead to a compile-time error.
 In this case, trying to access \emph{a} after line 3 would not compile, as \emph{a} is no longer the owner of the value.
 
+The heap-allocated \emph{String} type in Rust provides a good example that demonstrates ownership transfer of heap-based values.
+\begin{lstlisting}
+let x: String = String::from("hello world");
+let y: String = x;
+println!("x: {}, y: {}", x, y);
+\end{lstlisting}
+% Since the \emph{String} value can only have one owner, it is \emph{moved} into \emph{y}, which will become its new owner.
+After \emph{x} is moved into \emph{y} in line 2, \emph{x} is no longer valid.
+Therefore, Rust prevents you from accessing the invalid \emph{x} in the third line, and the program will not compile.
+
+\paragraph{Stack-based values}
+
+In contrast to heap-based values, the size of stack-based values is known at compile time and usually small.
+Therefore, stack-based values in Rust are copied instead of moved.
+% TODO: reformulate
+Internally, primitive types are annotated with the \emph{Copy} trait, which specifies that variables are trivially copied instead of moved.
 
 
+% The following example illustrates that the ownership of stack-based values is not transferred.
+% \begin{lstlisting}
+% let x = 5;
+% let y = x;
+% y = y + 1;
+% assert_eq!(x, 5)
+% \end{lstlisting}
 
+The following piece of code demonstrates how primitive stack-based values are \emph{moved} into other variables in Rust.
+\begin{lstlisting}
+let x: &str = "hello world";
+let y: &str = x;
+println!("x: {}, y: {}", x, y);
+\end{lstlisting}
+Since \emph{x} has a known, fixed size, its value is simply copied into \emph{y}.
+Therefore, the program compiles and, as expected, "x: hello world, y: hello world" is printed to stdout.
+% TODO: explain what Rust traits are
 
-% TODO: avoid and at beginning of sentence
-% And, since the \emph{String} value can only have one owner, it is \emph{moved} into \emph{y}, which will become its new owner.
-% Because Rust prevents you from using the invalid reference to \emph{x} in the third line, the program will not compile.
+\cite{rust-book}
+
 
 
 
 % The two main representations of strings in Rust provide a good example.
 % Rust supports immutable string literals \emph{\&str}, which are stored on the stack, and objects of type \emph{String}, which are stored as a vector of bytes on the heap and are, therefore, growable. \cite{rust-by-example}
 
-% TODO: bad sentence
-% The following piece of code shows a \emph{String} value being \emph{moved} from one variable into another.
-The heap-allocated \emph{String} type in Rust provides a good example to demonstrate the transfer of ownership of values.
-\begin{lstlisting}
-let x: String = String::from("hello world");
-let y: String = x;
-println!("x: {}, y: {}", x, y);
-\end{lstlisting}
-% TODO: go into detail on how strings/heap types are stored on heap.
-The \emph{String} value stored in \emph{x} could be arbitrarily long at runtime.
-Thus, copying the whole string into \emph{y} could be very inefficient.
-% TODO: avoid and at beginning of sentence
-And, since the \emph{String} value can only have one owner, it is \emph{moved} into \emph{y}, which will become its new owner.
-After the move, \emph{x} is no longer valid.
-Because Rust prevents you from using the invalid reference to \emph{x} in the third line, the program will not compile.
+\subsection{The Clone trait}
 
 By default and by design, Rust will never automatically create deep copies of data stored on the heap.
 To do so, one must explicitly call the \emph{clone} method on an object.
@@ -279,6 +298,7 @@ println!("x: {}, y: {}", x, y);
 \end{lstlisting}
 
 The ownership of a value is not only transferred during the assignment to another variable, but also when it is passed to a function as a parameter and when it is returned from a function.
+
 
 
 \cite{rust-book}
@@ -300,28 +320,6 @@ The ownership of a value is not only transferred during the assignment to anothe
 
 \cite{rust-book}
 
-\subsubsection{Stack-based values}
-
-First, one must differentiate between values that are stored on the stack and those stored on the heap.
-% TODO: leave out immutable, adds no meaning to sentence
-In Rust, primitive data types (e.g. signed 32 bit integers \emph{i32}) are immutable by default and stored on the stack, since their sizes are small and known at compile time.
-
-% TODO: a good example of what?
-
-% TODO: footnote that main class etc. have been omitted for sake of simplicity
-% However, a similar code snippet that replaces the string literal with the \emph{String} type behaves differently.
-% The following piece of code demonstrates how primitive values are \emph{moved} into other variables in Rust.
-\begin{lstlisting}
-let x: &str = "hello world";
-let y: &str = x;
-println!("x: {}, y: {}", x, y);
-\end{lstlisting}
-Since \emph{x} has a known, fixed size, its value is simply copied into \emph{y}.
-Therefore, the program compiles and, as expected, "x: hello world, y: hello world" is printed to stdout.
-% TODO: explain what Rust traits are
-Internally, these primitive types are annotated with the \emph{Copy} trait, which specifies that variables are trivially copied instead of moved.
-
-\cite{rust-book}
 
 
 
