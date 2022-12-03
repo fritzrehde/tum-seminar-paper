@@ -157,11 +157,6 @@ Extending the rules stated for owners-as-dominators, \emph{a} can also validly r
 % TODO: inconsistent use of method and function
 \section{Implementation in Rust}
 
-Most of the information gathered in this chapter is derived from the "Understanding Ownership" section from the Rust Book\cite{rust-book}.
-
-
-\subsection{Memory allocation system}
-
 There are two major requirements that a memory allocation system must fulfill:
 At runtime, memory can be requested from the memory allocator and there exists a mechanism for memory to be freed by the memory allocator.
 
@@ -321,11 +316,10 @@ In Rust, a \emph{reference} is an address that points to a value that is owned b
 Unlike traditional \emph{pointers} used in other low-level programming languages, a reference is guaranteed to point to a valid value.
 In Rust terminology, creating a reference is called \emph{borrowing}.
 A reference does not own the value it points to.
-Therefore, only the reference itself, not the value which the reference has borrowed, is dropped at the end of the reference's scope.
+Therefore, only the reference itself, not the value which it has borrowed, is dropped at the end of the reference's scope.
 Borrowing is useful for performing an operation on a value without taking ownership of it.
 
 Rust supports creating both immutable and mutable references.
-The scope of a reference starts where it is introduced and extends until the last time it is used.
 
 \paragraph{Immutable references}
 
@@ -335,10 +329,10 @@ The value that immutable references refer to may not be modified, otherwise prog
 \begin{lstlisting}
 fn main() {
   let s = String::from("hello");
-  let r1 = &s;
-  let r2 = &s;
-  print\_str(r1);
-  print\_str(r2);
+  let s1 = &s;
+  let s2 = &s;
+  print\_str(s1);
+  print\_str(s2);
 }
 fn print\_str(s: &String) {
   println!("printed from a reference: {}", s);
@@ -346,20 +340,14 @@ fn print\_str(s: &String) {
 \end{lstlisting}
 
 As long as the value \emph{s} is not modified in the \emph{print\_str} function, the program will compile.
-Furthermore, an unlimited amount of immutable references to the same value may exist at any time.
-The scopes of each of these immutable references may overlap.
-% However, this rule only holds as long as the scope of a mutable reference to the same value does not overlap with the scopes of the immutable references.
-However, mutable references provide an exception to this rule, which is explained in the next section.
-
-Multiple immutable references are allowed because none of the references can modify the value.
-Thereby, no immutable reference can affect another reference's reading of the value.
+Furthermore, an unlimited amount of immutable references to the same value can be created, as long as there exists no mutable reference to the value.
 
 
 % TODO: multiple &mut are technically only illegal if used
 \paragraph{Mutable references}
 
 Rust also supports mutable references, which are created with the \emph{&mut} keyword and allow the borrowed value to be modified.
-For obvious reasons, creating a mutable reference is only possible if the borrowed value is also mutable.
+For obvious reasons, the borrowed value also has to be mutable.
 
 \begin{lstlisting}
 fn main() {
@@ -371,33 +359,11 @@ fn modify\_str(s: &mut String) {
 }
 \end{lstlisting}
 
-The scope of a mutable reference to a value may not overlap with the scope of any other immutable or mutable reference to that same value.
-This implies that there may only exist one mutable reference to a value at any given time.
-During this time, no further immutable or mutable references are allowed.
-
-This restriction exists to identify and prevent \emph{data races}, which can cause undefined behaviour, at compile time.
-A data race occurs when two or more pointers access the same data at the same time, at least one of the points is being used to write the data and there exists no mechanism to synchronize access to the data. \cite{rust-book}
-
-% The emphasis on the scope of references when only allowing multiple references with scopes that overlap is very important.
-However, it is important to note that the creation of multiple mutable and immutable references with scopes that do not overlap is allowed.
-
-\begin{lstlisting}
-let mut s = String::from("hello");
-
-let r1 = &s; // allowed
-let r2 = &s; // allowed
-println!("{} and {}", r1, r2);
-
-let r3 = &mut s; // allowed
-r3.push\_str(" world");
-println!("{}", r3);
-\end{lstlisting}
-\cite{rust-book}
-
-Since \emph{r1} and \emph{r2} are not used after line 5, that is where their scopes end.
-The scope of the mutable reference \emph{r3} only starts in line 7.
-Therefore, the scopes of the mutable reference and the two immutable references do not overlap and the program compiles.
-
+However, there is only allowed to be multiple mutable references to the same value at a time.
+At any given time, there may only exist one mutable reference to a value.
+Any further references during that time, whether immutable or mutable, are not allowed.
+However, Rust does not allow multiple mutable references to the same value.
+However, Rust only allows one mutable reference to exist and 
 
 \subsection{Borrowing}
 
