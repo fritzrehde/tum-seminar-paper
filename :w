@@ -367,7 +367,7 @@ This restriction exists to identify and prevent \emph{data races}, which can cau
 A data race occurs when two or more pointers access the same data at the same time, at least one of the points is being used to write the data and there exists no mechanism to synchronize access to the data \cite{rust-book}.
 
 % The emphasis on the scope of references when only allowing multiple references with scopes that overlap is very important.
-However, the following code example \cite{rust-book} shows that it is important to note that the creation of multiple mutable and immutable references with scopes that do not overlap is allowed.
+However, it is important to note that the creation of multiple mutable and immutable references with scopes that do not overlap is allowed.
 
 \begin{lstlisting}
 let mut s = String::from("hello");
@@ -380,6 +380,7 @@ let r3 = &mut s; // allowed
 r3.push\_str(" world");
 println!("{}", r3);
 \end{lstlisting}
+\cite{rust-book}
 
 Since \emph{r1} and \emph{r2} are not used after line 5, that is where their scopes end.
 The scope of the mutable reference \emph{r3} only starts in line 7.
