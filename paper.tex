@@ -63,6 +63,7 @@ Understanding memory-related bugs will, therefore, help in understanding why own
 
 
 \subsection{Memory Safety}
+\label{sec:memory-safety}
 
 The tech giants Google \cite{google-memory-safety} and Microsoft \cite{microsoft-memory-safety} have both revealed that around 70 percent of their vulnerabilities were the result of memory safety issues.
 
@@ -78,6 +79,7 @@ Even though software analysis tools can detect many instances of memory manageme
 
 
 \subsection{State of the art}
+\label{sec:state-of-the-art}
 
 % - when/in which language first introduced?
 % - why slow adoption?
@@ -92,12 +94,13 @@ These approaches differ in what kind of, if any, aliases they allow.
 % Main part (approach, evaluation, discussion, etc.)
 
 \section{Ownership types in theory}
+\label{sec:theory}
 
 % TODO: second source to provide more detail of each owners-as-...
-% TODO: find more varied words to classify these approaches as: principle, approach, model
 % TODO: maybe add numbered list (like in source material) for the rules like in the Rust section
 
 \subsection{Domain specific terms}
+\label{sec:domain-specific-terms}
 
 In the following, some terms from the Ownership Types Survey \cite{ownership-types-survey}, which are commonly used throughout this paper, are defined.
 
@@ -110,7 +113,14 @@ Each object has one single ownership context, which is the set of all objects it
 Objects that are in the same ownership context are called \emph{siblings} or \emph{peers}.
 
 
+\subsection{Flexible Alias Protection}
+\label{sec:flexible-alias-protection}
+
+% TODO: write something
+
+
 \subsection{Owners-as-dominators}
+\label{sec:owners-as-dominators}
 
 One such flavour is the owners-as-dominators invariant \cite{ownership-types-survey}, where the heap is structured as a tree with each object being inside its owner.
 External access is therefore only possible through the owner.
@@ -121,6 +131,7 @@ The owners-as-dominators principle provides a simple, clear and strong guarantee
 
 
 \subsection{Owners-as-modifiers}
+\label{sec:owners-as-modifiers}
 
 Another kind is the owners-as-modifiers model \cite{ownership-types-survey}, which is a weaker form of owners-as-dominators that additionally allows read-only references.
 A read-only reference can only be used to read files and call pure methods, which may not modify any existing objects.
@@ -134,6 +145,7 @@ The owners-as-modifiers principle expands the programming possibilities of the o
 
 
 \subsection{Owners-as-ombudsmen}
+\label{sec:owners-as-ombudsmen}
 
 % TODO: definition of ombudsmen for context
 A last flavour of ownership types is the owners-as-ombudsmen approach \cite{ownership-types-survey}, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
@@ -143,17 +155,26 @@ This is achieved by allowing multiple objects to define a shared aggregate owner
 Extending the rules stated for owners-as-dominators, \emph{a} can also validly reference \emph{b} if \emph{a} is owned by aggregate owner \emph{b}.
 
 
+% \subsection{Extensions}
+
+% \paragraph{Ownership transfer}
+
+% TODO: possibly to do
+
+
 % \subsection{Application of Ownership Types}
 
 % TODO: chapter 6 of ownership-types-survey
 
-% TODO: inconsistent use of method and function
+
 \section{Implementation in Rust}
+\label{sec:implementation-rust}
 
 All of the information gathered in this chapter is derived from the "Understanding Ownership" section from the Rust Book \cite{rust-book}.
 If anything was retrieved from other sources, it will be cited as such.
 
 \subsection{Memory allocation system}
+\label{sec:memory-allocation}
 
 There are two major requirements that a memory allocation system must fulfill:
 At runtime, memory can be requested from the memory allocator and there exists a mechanism for memory to be freed by the memory allocator.
@@ -183,10 +204,8 @@ The ownership rules in Rust are as follows:
   \item There can only be one owner at a time.
   \item When the owner goes out of scope, the value will be \emph{dropped}.
 \end{enumerate}
-% Rust automatically calls the function \emph{drop} when a variable goes out of scope, which frees the memory of the value that is owned by that variable.
-% TODO: is a variable really an owner of a value? Possibly change term variable
 The scope of a value is the range within a program in which it is valid.
-Rust automatically calls the function \emph{drop}, which frees the associated memory, when a variable goes out of scope.
+Rust automatically calls the function \emph{drop} when a value goes out of scope, which frees the associated memory.
 
 The following describes how the concept of ownership is implemented in Rust.
 
@@ -194,22 +213,22 @@ The following describes how the concept of ownership is implemented in Rust.
 % TODO: maybe add defintion of ownership transfer if not obvious
 % TODO: go into detail on how heap types are stored on heap. some constant fields are actually stored on stack (string: pointer, size, capacity)
 \subsection{Transferring ownership}
+\label{sec:rust-transferring-ownership}
 
 First, one must differentiate between values that are stored on the stack and those stored on the heap.
 In Rust, primitive data types (e.g. signed 32 bit integers \emph{i32}) are stored on the stack, since their sizes are small and known at compile time.
 In contrast, values are stored on the heap if their size is dynamic and, therefore, unknown at compile time.
 The ownership concepts in Rust mostly apply to values stored on the heap.
-% Thus, the behaviour of values stored on the stack will be explained later.
 
 \paragraph{Heap-based variables}
 
-% TODO: source
 In addition to the memory safety that ownership types provide, ownership transfers can also reduce redundant copy operations.
 Since heap-based values could be arbitrarily large at runtime, copying the whole value instead of transferring ownership could be very inefficient.
 There are several different scenarios in which ownership is transferred.
 
 In the simplest scenario, ownership is transferred from the variable \emph{a} to the variable \emph{b} when \emph{b} is assigned to \emph{a}.
-% TODO: footnote that main class etc. have been omitted for sake of simplicity
+\footnote{In some code snippets, the main function is omitted for sake of simplicity}
+
 \begin{lstlisting}
 let a = HeapBasedType::default();
 let b = a;
@@ -253,15 +272,12 @@ After \emph{x} is moved into \emph{y} in line 2, \emph{x} is no longer valid.
 Therefore, Rust prevents you from accessing the invalid \emph{x} in the third line, and the program will not compile.
 
 
-% TODO: explain what Rust traits are
 \paragraph{Stack-based values}
 
 In contrast to heap-based values, the size of stack-based values is known at compile time and usually small.
 Therefore, stack-based values in Rust are \emph{copied} instead of \emph{moved}.
-% TODO: reformulate
 Internally, this works because primitive types are annotated with and implement the \emph{Copy} trait.
 
-% The two main representations of strings in Rust provide a good example.
 Besides the heap-allocated \emph{String} type, Rust also supports string literals \emph{\&str}, which are stored on the stack.
 
 The following piece of code \cite{rust-book}, which is similar to the code from above but replaces the \emph{String} type with string literals, demonstrates how stack-based string literals are \emph{copied} instead of \emph{moved} into other variables in Rust.
@@ -275,6 +291,7 @@ Therefore, the program compiles and "x: hello world, y: hello world" is printed 
 
 
 \subsection{The Clone trait}
+\label{sec:rust-clone-trait}
 
 By default and by design, Rust will never automatically create deep copies of data stored on the heap.
 To do so, one must explicitly call the \emph{clone} method on an object.
@@ -288,9 +305,9 @@ println!("x: {}, y: {}", x, y);
 
 
 \subsection{Immutability}
+\label{sec:rust-immutability}
 
 By default, all values and references in Rust are immutable.
-% TODO: source
 An object is defined as immutable if its state cannot be modified after its creation.
 In Rust, mutable values and references must be explicitly created using the \emph{mut} keyword.
 
@@ -302,9 +319,9 @@ s.push\_str("hello");
 
 
 \subsection{References and borrowing}
+\label{sec:rust-references}
 
-% TODO: latex link to owners-as-... section
-As pointed out in the owners-as-dominators section, many common programming idioms require some form of aliasing or referencing.
+As pointed out in \ref{sec:owners-as-dominators}, many common programming idioms require some form of aliasing or referencing.
 In Rust, a \emph{reference} is an address that points to a value that is owned by another variable.
 Unlike traditional \emph{pointers} used in other low-level programming languages, a reference is guaranteed to point to a valid value.
 In Rust terminology, creating a reference is called \emph{borrowing}.
@@ -343,7 +360,6 @@ Multiple immutable references are allowed because none of the references can mod
 Thereby, no immutable reference can affect another reference's reading of the value.
 
 
-% TODO: multiple &mut are technically only illegal if used
 \paragraph{Mutable references}
 
 Rust also supports mutable references, which are created with the \emph{&mut} keyword and allow the borrowed value to be modified.
