@@ -45,9 +45,7 @@ Many progamming bugs are created through unintentional aliases, which are hard t
 Ownership types are one solution that attempt to prevent many alias-related bugs.
 The premise of ownership types is that not only the fields of an object are protected from external access, but also all objects stored in those fields.
 This is done by allowing objects to take ownership of other objects.
-% TODO: add citation\cite{ownership-types-survey}
 
-% This paper depicts the different kinds of ownership types and explains how the modern programming language Rust uses ownership types to garantee memory safety.
 This paper depicts the different kinds of ownership types and explains how the modern programming language Rust uses ownership types.
 
 \end{abstract}
@@ -60,28 +58,33 @@ This paper depicts the different kinds of ownership types and explains how the m
 \label{sec:introduction}
 % Introduction: introduce area, problem, approach, key results, contributions, outline
 
-% TODO: write something
-
-
-\section{Background}
-\label{sec:background}
-% Background: if needed, describe prerequisites
-
 One of the main goals of ownership types is to improve memory safety.
 Understanding memory-related bugs will, therefore, help in understanding why ownership types are useful.
 
+
 \subsection{Memory Safety}
 
-% source: Definition of memory safety\cite{memory1}.
-% source: Why memory safery is important\cite{nsa-memory-safety}.
+The tech giants Google \cite{google-memory-safety} and Microsoft \cite{microsoft-memory-safety} have both revealed that around 70 percent of their vulnerabilities were the result of memory safety issues.
 
-Memory safety is defined as ...
+The importance of memory safety is further underlined by the fact that the National Security Agency of the United States of America has published a Cybersecurity Information Sheet \cite{nsa-memory-safety} on the topic, the contents of which are described in the following section.
+
+% The article reveals that around 70 percent of the vulnerabilities of Microsoft and Google\cite{google-memory-safety}, specifically in their browser Chrome, were the result of memory safety issues.
+
+There are a variety of potential occurences of memory management issues.
+Examples include \emph{buffer overflows}, where data is accessed outside the bounds of an array, \emph{memory leaks}, where the programmer forgets to free memory that has been allocated, causing the program to, eventually, run out of memory, \emph{Use-After-Free}, where memory is accessed after it has been freed,\emph{Double-Free}, where memory is freed again after it had already been freed before, and the use of uninitialized memory.
+These issues can not only enable potential malicious exploits, they can also result in incorrect program results, the decrease of a program's performance, or seemingly random program crashes.
+
+Commonly used programming languages, such as C and C++, provide a lot of freedom and flexibility in memory management, but this comes at the cost of heavily relying on the programmer to perform the needed checks on memory references.
+Furthermore, the developers must perform rigorous testing to ensure the software handles surprising conditions.
+Even though software analysis tools can detect many instances of memory management issues, the NSA recommends the use of inherently memory safe languages.
 
 
 \subsection{State of the art}
 
 % - when/in which language first introduced?
 % - why slow adoption?
+
+Ownership types were first introduced in...
 
 Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling its effects\cite{ownership-types-survey}.
 Many different flavours of ownership types have been explored.
@@ -408,13 +411,13 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 
 
 
-\section{Practical examples using Rust}
+% \section{Practical examples using Rust}
 % - show common Rust ownership errors
 % - Protection against memory vulnerabilitie examples
 % - reference: \cite{rust-by-example}
 
 
-\section{Alternatives}
+% \section{Alternatives}
 % - comparison to alternative type systems without ownership (C/C++: none at all, Java: garbage collection)
 % - choose non-ownership programming language e.g. C++20
 % - compare code examples
@@ -422,8 +425,8 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 % - runtime differences between Rust and non-ownership lang
 
 
-\section{Related work}
-\label{sec:relatedwork}
+% \section{Related work}
+% \label{sec:relatedwork}
 % (In a paper: Related Work – might come before main part)
 
 
