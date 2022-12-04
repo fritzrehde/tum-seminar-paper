@@ -343,7 +343,7 @@ In Rust, mutable values and references must be explicitly created using the \emp
 For example, a string literal can be appended to a mutable String.
 \begin{lstlisting}
 let mut s = String::from("hello");
-s.push\_str("hello");
+s.push_str("hello");
 \end{lstlisting}
 
 
@@ -372,10 +372,10 @@ fn main() {
   let s = String::from("hello");
   let r1 = &s;
   let r2 = &s;
-  print\_str(r1);
-  print\_str(r2);
+  print_str(r1);
+  print_str(r2);
 }
-fn print\_str(s: &String) {
+fn print_str(s: &String) {
   println!("printed from a reference: {}", s);
 }
 \end{lstlisting}
@@ -397,10 +397,10 @@ For obvious reasons, creating a mutable reference is only possible if the borrow
 \begin{lstlisting}
 fn main() {
   let mut s = String::from("hello");
-  modify\_str(&mut s);
+  modify_str(&mut s);
 }
-fn modify\_str(s: &mut String) {
-  s.push\_str(" world");
+fn modify_str(s: &mut String) {
+  s.push_str(" world");
 }
 \end{lstlisting}
 
@@ -421,7 +421,7 @@ let r2 = &s; // allowed
 println!("{} and {}", r1, r2);
 
 let r3 = &mut s; // allowed
-r3.push\_str(" world");
+r3.push_str(" world");
 println!("{}", r3);
 \end{lstlisting}
 
