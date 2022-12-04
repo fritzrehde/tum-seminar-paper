@@ -64,7 +64,6 @@ Understanding memory-related bugs will, therefore, help in understanding why own
 \label{sec:memory-safety}
 
 The tech giants Google \cite{google-memory-safety} and Microsoft \cite{microsoft-memory-safety} have both revealed that around 70 percent of their vulnerabilities were the result of memory safety issues.
-
 The importance of memory safety is further underlined by the fact that the National Security Agency of the United States of America has published a Cybersecurity Information Sheet \cite{nsa-memory-safety} on the topic, the contents of which are described in the following section.
 
 There are a variety of potential occurrences of memory management issues.
@@ -96,6 +95,8 @@ These approaches differ in what kind of, if any, aliases they allow.
 
 % TODO: second source to provide more detail of each owners-as-...
 % TODO: maybe add numbered list (like in source material) for the rules like in the Rust section
+If not otherwise indicated, all of the information gathered in this chapter stems from the Ownership Types Survey \cite{ownership-types-survey}.
+
 
 \subsection{Domain specific terms}
 \label{sec:domain-specific-terms}
@@ -106,24 +107,30 @@ The core concept of ownership types is that objects can be \emph{owners} of othe
 Given objects \emph{a} and \emph{b}, \emph{a} is \emph{inside} \emph{b} if \emph{a} is the same object as \emph{b} or \emph{a} is \emph{owned} by \emph{b}, transitively.
 The \emph{outside} relation is the converse of the \emph{inside} relation.
 
-In most ownership type variants, the heap is divided into different regions called ownership contexts.
+In most ownership-type variants, the heap is divided into different regions called ownership contexts.
 Each object has one single ownership context, which is the set of all objects it owns.
 Objects that are in the same ownership context are called \emph{siblings} or \emph{peers}.
-
-
-\subsection{Flexible Alias Protection}
-\label{sec:flexible-alias-protection}
-
-% TODO: write something
 
 
 \subsection{Owners-as-dominators}
 \label{sec:owners-as-dominators}
 
-One such flavor is the owners-as-dominators invariant \cite{ownership-types-survey}, where the heap is structured as a tree with each object being inside its owner.
-External access is, therefore, only possible through the owner.
-The rules that must be fulfilled for \emph{a} to validly reference \emph{b} are that either \emph{a} is owned by \emph{b}, \emph{a} and \emph{b} are siblings or \emph{b} is outside \emph{a}.
-% TODO: more detail
+One such flavor is the \emph{owners-as-dominators model} \cite{ownership-types-survey}, which is an implementation of the original Flexible Alias Protection concept \cite{flexible-alias-protection}, which described a core encapsulation mechanism.
+
+Yang Zhao and John Boyland \cite{permission-ownership-types} specify that, with owners-as-dominators, each regular object must have another object or a special global "world" as its owner.
+Additionally, each object can own zero or more objects.
+Therefore, the ownership relation between multiple objects must be acyclic, meaning that there may be no circles in a graph where the nodes represent objects and the vertices represent the "owns" relation.
+Hence, the ownership relation forms an ownership hierarchy tree, where the root is the "world" and each object is inside its owner.
+Through this object encapsulation, any external reference to an object is only possible through its owner.
+This model gets its name from the fact that any object acting as an owner is considered to be a \emph{dominator} for all of the owned objects.
+
+% The rules that must be fulfilled for \emph{a} to validly reference \emph{b} are that either \emph{a} is owned by \emph{b}, \emph{a} and \emph{b} are siblings or \emph{b} is outside \emph{a}.
+The survey \cite{ownership-types-survey} defines that at least one of the following rules must apply for object \emph{a} to validly reference \emph{b}.
+\begin{enumerate}
+  \item \emph{a} is the owner of \emph{b},
+  \item \emph{a} and \emph{b} are siblings, or
+  \item \emph{b} is outside of \emph{a}.
+\end{enumerate}
 
 The owners-as-dominators principle provides a simple, clear and strong guarantee but makes programming more difficult by not allowing common idioms through aliasing.
 
@@ -135,22 +142,43 @@ Another kind is the owners-as-modifiers model \cite{ownership-types-survey}, whi
 A read-only reference can only be used to read files and call pure methods, which may not modify any existing objects.
 In essence, aliasing is unrestricted, but only the owner of an object can modify it.
 Owners-as-modifiers extend the rules specified for owners-as-dominators.
-For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-modifiers follows the same rules as owners-as-dominators.
-The only addition is that \emph{r} can also be a valid reference if it is a read-only reference and only pure methods are being called on it.
-% TODO: more detail
 
-The owners-as-modifiers principle expands the programming possibilities of the owners-as-modifiers principle and fulfills the requirements needed for the verification of object-oriented programs.
+% For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-modifiers follows the same rules as owners-as-dominators.
+% The only addition is that \emph{r} can also be a valid reference if it is a read-only reference and only pure methods are being called on it.
+For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-modifiers follows the following rules \cite{ownership-types-survey}.
+\begin{enumerate}
+  \item \emph{a} is the owner of \emph{b},
+  \item \emph{a} and \emph{b} are siblings, or
+  \item \emph{b} is outside of \emph{a}, or
+  \item \emph{r} is a read-only reference and only pure methods can be called on it.
+\end{enumerate}
+
+According to Werner Dietl and Peter Müller \cite{lightweight-ownership}, a fundamental difference between owners-as-dominator and owners-as-modifiers is that the former restricts \emph{where} references are allowed to point to, while the latter allows references to point to objects in arbitrary contexts, but restricts \emph{how} references can be used.
+
+The owners-as-modifiers principle expands the programming possibilities of the owners-as-modifiers principle and fulfills the requirements needed for the verification of the functional correctness of object-oriented programs.
 
 
 \subsection{Owners-as-ombudsmen}
 \label{sec:owners-as-ombudsmen}
 
-% TODO: definition of ombudsmen for context
-The last flavor of ownership types is the owners-as-ombudsmen approach \cite{ownership-types-survey}, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
-% TODO: examples
-This is achieved by allowing multiple objects to define a shared aggregate owner.
-% TODO: what is aggregate owner
-Extending the rules stated for owners-as-dominators, \emph{a} can also validly reference \emph{b} if \emph{a} is owned by aggregate owner \emph{b}.
+% TODO: is it obvious that this contains exact sentences from citation?
+The paper that first introduced the idea of owners-as-ombudsmen \cite{owners-as-ombudsmen} describes the concept as an extension of the owners-as-dominators model.
+With owners-as-dominators, every path from the root to an object must pass through its owner.
+Thus, encapsulated objects must have a single \emph{bridge object} that mediates all external interaction with its internal objects.
+The owners-as-ombudsmen approach, on the other hand, relaxes the single bridge object constraint and allows several bridge objects to collectively define an aggregate with a shared representation.
+These bridge objects are called \emph{ombudsmen} to emphasize their benevolent nature.
+
+% The last flavor of ownership types is the owners-as-ombudsmen approach \cite{ownership-types-survey}, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
+% This is achieved by allowing multiple objects to define a shared aggregate owner.
+
+% Extending the rules stated for owners-as-dominators, \emph{a} can also validly reference \emph{b} if \emph{a} is owned by aggregate owner \emph{b}.
+For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-ombudsmen must adhere to at least one of the following rules \cite{ownership-types-survey}.
+\begin{enumerate}
+  \item \emph{a} is the owner of \emph{b},
+  \item \emph{a} and \emph{b} are siblings, or
+  \item \emph{b} is outside of \emph{a}, or
+  \item \emph{a} is owned by aggregate owner \emph{b}
+\end{enumerate}
 
 
 % \subsection{Extensions}
@@ -167,6 +195,9 @@ Extending the rules stated for owners-as-dominators, \emph{a} can also validly r
 
 \section{Implementation in Rust}
 \label{sec:implementation-rust}
+
+The modern programming language Rust uses an extended version of the ownership type model \emph{owners-as-modifiers}.
+As will be discussed in this chapter, Rust allows both read-only and mutable references in a controlled manner.
 
 All of the information gathered in this chapter is derived from the "Understanding Ownership" section from the Rust Book \cite{rust-book}.
 If anything was retrieved from other sources, it would be cited as such.
@@ -333,7 +364,8 @@ The scope of a reference starts where it is introduced and extends until the las
 \paragraph{Immutable references}
 
 Immutable references can be seen as read-only references and are acquired using the \emph{\&} operator.
-The value that immutable references refer to may not be modified, otherwise the program will not compile.
+The value that immutable references refer to may not be modified.
+Otherwise the program will not compile.
 
 \begin{lstlisting}
 fn main() {
@@ -376,7 +408,7 @@ The scope of a mutable reference to a value may not overlap with the scope of an
 This implies that there may only exist one mutable reference to a value at any given time.
 During this time, no further immutable or mutable references are allowed.
 
-This restriction exists to identify and prevent \emph{data races}, which can cause undefined behavior, at compile time.
+This restriction exists to identify and prevent \emph{data races}, which can cause undefined behavior at compile time.
 A data race occurs when two or more pointers access the same data simultaneously, at least one of the points is being used to write the data, and there exists no mechanism to synchronize access to the data \cite{rust-book}.
 
 However, the following code example \cite{rust-book} shows that it is important to note that the creation of multiple mutable and immutable references with scopes that do not overlap is allowed.
@@ -425,7 +457,7 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 \label{sec:summary}
 
 In summary, programming languages based on ownership types can eliminate many memory-related issues by enforcing strict rules on the existence and behavior of references to values.
-Furthermore, ownership types are integral to the Rust programming.
+Furthermore, an enhanced version of the ownership types concept is integral to the Rust programming language.
 Compared to more commonly used low-level programming languages like C, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time, allowing for strong runtime performance and omitting the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform.
 Even though the Rust compiler forces developers to think more intentionally about how they deal with memory through ownership, they will receive helpful compile-time error messages instead of crashes or undefined behavior at runtime if they do something wrong.
 
