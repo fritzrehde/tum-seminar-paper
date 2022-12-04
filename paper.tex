@@ -38,11 +38,9 @@
 \begin{abstract}
 % Abstract: Brief summary of area, problem, approach, key result
 
-% why do we need ownership types, what do they do?
-
 Object aliasing is the concept of accessing the same memory through different symbolic names in object-oriented programming languages.
-Many progamming bugs are created through unintentional aliases, which are hard to detect and can lead to unexpected side-effects.
-Ownership types are one solution that attempt to prevent many alias-related bugs.
+Many programming bugs are created through unintentional aliases, which are hard to detect and can lead to unexpected side effects.
+Ownership types are one solution that attempts to prevent many alias-related bugs.
 The premise of ownership types is that not only the fields of an object are protected from external access, but also all objects stored in those fields.
 This is done by allowing objects to take ownership of other objects.
 
@@ -69,13 +67,13 @@ The tech giants Google \cite{google-memory-safety} and Microsoft \cite{microsoft
 
 The importance of memory safety is further underlined by the fact that the National Security Agency of the United States of America has published a Cybersecurity Information Sheet \cite{nsa-memory-safety} on the topic, the contents of which are described in the following section.
 
-There are a variety of potential occurences of memory management issues.
+There are a variety of potential occurrences of memory management issues.
 Examples include \emph{buffer overflows}, where data is accessed outside the bounds of an array, \emph{memory leaks}, where the programmer forgets to free memory that has been allocated, causing the program to, eventually, run out of memory, \emph{Use-After-Free}, where memory is accessed after it has been freed,\emph{Double-Free}, where memory is freed again after it had already been freed before, and the use of uninitialized memory.
-These issues can not only enable potential malicious exploits, they can also result in incorrect program results, the decrease of a program's performance, or seemingly random program crashes.
+These issues can not only enable potential malicious exploits, they can also result in incorrect program results, the decrease of a program's performance or seemingly random program crashes.
 
 Commonly used programming languages, such as C and C++, provide a lot of freedom and flexibility in memory management, but this comes at the cost of heavily relying on the programmer to perform the needed checks on memory references.
 Furthermore, the developers must perform rigorous testing to ensure the software handles surprising conditions.
-Even though software analysis tools can detect many instances of memory management issues, the NSA recommends the use of inherently memory safe languages.
+Even though software analysis tools can detect many instances of memory management issues, the NSA recommends the use of inherently memory-safe languages.
 
 
 \subsection{State of the art}
@@ -84,10 +82,10 @@ Even though software analysis tools can detect many instances of memory manageme
 % - when/in which language first introduced?
 % - why slow adoption?
 
-The concept of ownership types provides one of the solutions aiming to elimate many of the described memory-related bugs.
-Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling its effects \cite{ownership-types-survey}.
-Many different flavours of ownership types have been explored.
-In this paper, state of the art implementations of the ownership types concept such as owners-as-dominators, owners-as-modifiers and owners-as-ombudsmen will be explored further.
+The concept of ownership types provides one of the solutions aiming to eliminate many of the described memory-related bugs.
+Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling their effects \cite{ownership-types-survey}.
+Many different flavors of ownership types have been explored.
+In this paper, state of the art implementations of the ownership types concept, such as owners-as-dominators, owners-as-modifiers and owners-as-ombudsmen, will be explored further.
 These approaches differ in what kind of, if any, aliases they allow.
 
 
@@ -122,12 +120,12 @@ Objects that are in the same ownership context are called \emph{siblings} or \em
 \subsection{Owners-as-dominators}
 \label{sec:owners-as-dominators}
 
-One such flavour is the owners-as-dominators invariant \cite{ownership-types-survey}, where the heap is structured as a tree with each object being inside its owner.
-External access is therefore only possible through the owner.
+One such flavor is the owners-as-dominators invariant \cite{ownership-types-survey}, where the heap is structured as a tree with each object being inside its owner.
+External access is, therefore, only possible through the owner.
 The rules that must be fulfilled for \emph{a} to validly reference \emph{b} are that either \emph{a} is owned by \emph{b}, \emph{a} and \emph{b} are siblings or \emph{b} is outside \emph{a}.
 % TODO: more detail
 
-The owners-as-dominators principle provides a simple, clear and strong guarantee, but makes programming more difficult by not allowing common idioms through aliasing.
+The owners-as-dominators principle provides a simple, clear and strong guarantee but makes programming more difficult by not allowing common idioms through aliasing.
 
 
 \subsection{Owners-as-modifiers}
@@ -148,7 +146,7 @@ The owners-as-modifiers principle expands the programming possibilities of the o
 \label{sec:owners-as-ombudsmen}
 
 % TODO: definition of ombudsmen for context
-A last flavour of ownership types is the owners-as-ombudsmen approach \cite{ownership-types-survey}, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
+The last flavor of ownership types is the owners-as-ombudsmen approach \cite{ownership-types-survey}, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
 % TODO: examples
 This is achieved by allowing multiple objects to define a shared aggregate owner.
 % TODO: what is aggregate owner
@@ -171,13 +169,13 @@ Extending the rules stated for owners-as-dominators, \emph{a} can also validly r
 \label{sec:implementation-rust}
 
 All of the information gathered in this chapter is derived from the "Understanding Ownership" section from the Rust Book \cite{rust-book}.
-If anything was retrieved from other sources, it will be cited as such.
+If anything was retrieved from other sources, it would be cited as such.
 
 \subsection{Memory allocation system}
 \label{sec:memory-allocation}
 
 There are two major requirements that a memory allocation system must fulfill:
-At runtime, memory can be requested from the memory allocator and there exists a mechanism for memory to be freed by the memory allocator.
+At runtime, memory can be requested from the memory allocator, and there exists a mechanism for memory to be freed by the memory allocator.
 
 The first requirement is trivial.
 
@@ -190,14 +188,14 @@ This, however, has a runtime performance overhead and can lead to a non-determin
 Another more traditional solution is requiring memory to be freed explicitly.
 This is a notorious source of bugs.
 If memory is never freed because it was forgotten, memory is wasted.
-If it is freed multiple times or accessed again after having been freed, it will result in undefined behaviour.
+If it is freed multiple times or accessed again after having been freed, it will result in undefined behavior.
 
 The ideal solution pairs one \emph{allocate} with exactly one \emph{free}.
 Rust uses neither a garbage collector nor requires memory to be freed manually.
 Instead, the concept of ownership is leveraged to determine when to free memory.
 
 The Rust Book \cite{rust-book} defines ownership as a set of rules that govern how it manages memory.
-The compiler checks whether these rules are adhered to, and does not compile the program if they are violated.
+The compiler checks whether these rules are adhered to and does not compile the program if they are violated.
 The ownership rules in Rust are as follows:
 \begin{enumerate}
   \item Each value in Rust has an owner.
@@ -216,9 +214,9 @@ The following describes how the concept of ownership is implemented in Rust.
 \label{sec:rust-transferring-ownership}
 
 First, one must differentiate between values that are stored on the stack and those stored on the heap.
-In Rust, primitive data types (e.g. signed 32 bit integers \emph{i32}) are stored on the stack, since their sizes are small and known at compile time.
+In Rust, primitive data types (e.g. signed 32-bit integers \emph{i32}) are stored on the stack since their sizes are small and known at compile time.
 In contrast, values are stored on the heap if their size is dynamic and, therefore, unknown at compile time.
-The ownership concepts in Rust mostly apply to values stored on the heap.
+The ownership concepts in Rust mainly apply to values stored on the heap.
 
 \paragraph{Heap-based variables}
 
@@ -227,14 +225,14 @@ Since heap-based values could be arbitrarily large at runtime, copying the whole
 There are several different scenarios in which ownership is transferred.
 
 In the simplest scenario, ownership is transferred from the variable \emph{a} to the variable \emph{b} when \emph{b} is assigned to \emph{a}.
-\footnote{In some code snippets, the main function is omitted for sake of simplicity}
+\footnote{In some code snippets, the main function is omitted for the sake of simplicity}
 
 \begin{lstlisting}
 let a = HeapBasedType::default();
 let b = a;
 \end{lstlisting}
 In Rust terminology, \emph{a} is \emph{moved} into \emph{b}.
-After the move, \emph{a} is no longer valid and \emph{b} is the new owner of the value.
+After the move, \emph{a} is no longer valid, and \emph{b} is the new owner of the value.
 
 Heap-based values will always be generated by a function at runtime.
 Therefore, one can generalize the above scenario to ownership being transferred from the variable \emph{a} to the variable \emph{b} when \emph{b} is assigned to the return value \emph{a} of \emph{foo}.
@@ -248,7 +246,7 @@ fn foo() {
 }
 \end{lstlisting}
 
-Lastly, ownership is transferred from the variable \emph{a} to the variable \emph{b} when \emph{a} is passed to function \emph{foo} which takes a parameter \emph{b}.
+Lastly, ownership is transferred from the variable \emph{a} to the variable \emph{b} when \emph{a} is passed to function \emph{foo}, which takes a parameter \emph{b}.
 \begin{lstlisting}
 fn main() {
   let a = HeapBasedType::default();
@@ -262,7 +260,7 @@ In \emph{foo}, \emph{b} is the owner of the value until it is \emph{dropped} at 
 Accessing the previous owner of a value after the ownership of that value has been transferred elsewhere will lead to a compile-time error.
 In this case, trying to access \emph{a} after line 3 would not compile, as \emph{a} is no longer the owner of the value.
 
-The heap-allocated \emph{String} type in Rust provides a good example that demonstrates ownership transfer of heap-based values.
+The heap-allocated \emph{String} type in Rust provides a good example demonstrating ownership transfer of heap-based values.
 \begin{lstlisting}
 let x: String = String::from("hello world");
 let y: String = x;
@@ -274,7 +272,7 @@ Therefore, Rust prevents you from accessing the invalid \emph{x} in the third li
 
 \paragraph{Stack-based values}
 
-In contrast to heap-based values, the size of stack-based values is known at compile time and usually small.
+In contrast to heap-based values, the size of stack-based values is known at compile time and is usually small.
 Therefore, stack-based values in Rust are \emph{copied} instead of \emph{moved}.
 Internally, this works because primitive types are annotated with and implement the \emph{Copy} trait.
 
@@ -296,7 +294,7 @@ Therefore, the program compiles and "x: hello world, y: hello world" is printed 
 By default and by design, Rust will never automatically create deep copies of data stored on the heap.
 To do so, one must explicitly call the \emph{clone} method on an object.
 
-The following adjustement to the code snippet from above creates a deep copy of \emph{x} and compiles successfully.
+The following adjustment to the code snippet from above creates a deep copy of \emph{x} and compiles successfully.
 \begin{lstlisting}
 let x: String = String::from("hello world");
 let y: String = x.clone();
@@ -326,7 +324,7 @@ In Rust, a \emph{reference} is an address that points to a value that is owned b
 Unlike traditional \emph{pointers} used in other low-level programming languages, a reference is guaranteed to point to a valid value.
 In Rust terminology, creating a reference is called \emph{borrowing}.
 A reference does not own the value it points to.
-Therefore, only the reference itself, not the value which the reference has borrowed, is dropped at the end of the reference's scope.
+Therefore, only the reference itself, not the value that the reference has borrowed, is dropped at the end of the reference's scope.
 Borrowing is useful for performing an operation on a value without taking ownership of it.
 
 Rust supports creating both immutable and mutable references.
@@ -335,7 +333,7 @@ The scope of a reference starts where it is introduced and extends until the las
 \paragraph{Immutable references}
 
 Immutable references can be seen as read-only references and are acquired using the \emph{\&} operator.
-The value that immutable references refer to may not be modified, otherwise program will not compile.
+The value that immutable references refer to may not be modified, otherwise the program will not compile.
 
 \begin{lstlisting}
 fn main() {
@@ -350,10 +348,9 @@ fn print\_str(s: &String) {
 }
 \end{lstlisting}
 
-As long as the value \emph{s} is not modified in the \emph{print\_str} function, the program will compile.
+The program will compile as long as the value \emph{s} is not modified in the \emph{print\_str} function.
 Furthermore, an unlimited amount of immutable references to the same value may exist at any time.
 The scopes of each of these immutable references may overlap.
-% However, this rule only holds as long as the scope of a mutable reference to the same value does not overlap with the scopes of the immutable references.
 However, mutable references provide an exception to this rule, which is explained in the next section.
 
 Multiple immutable references are allowed because none of the references can modify the value.
@@ -379,10 +376,9 @@ The scope of a mutable reference to a value may not overlap with the scope of an
 This implies that there may only exist one mutable reference to a value at any given time.
 During this time, no further immutable or mutable references are allowed.
 
-This restriction exists to identify and prevent \emph{data races}, which can cause undefined behaviour, at compile time.
-A data race occurs when two or more pointers access the same data at the same time, at least one of the points is being used to write the data and there exists no mechanism to synchronize access to the data \cite{rust-book}.
+This restriction exists to identify and prevent \emph{data races}, which can cause undefined behavior, at compile time.
+A data race occurs when two or more pointers access the same data simultaneously, at least one of the points is being used to write the data, and there exists no mechanism to synchronize access to the data \cite{rust-book}.
 
-% The emphasis on the scope of references when only allowing multiple references with scopes that overlap is very important.
 However, the following code example \cite{rust-book} shows that it is important to note that the creation of multiple mutable and immutable references with scopes that do not overlap is allowed.
 
 \begin{lstlisting}
@@ -399,7 +395,7 @@ println!("{}", r3);
 
 Since \emph{r1} and \emph{r2} are not used after line 5, that is where their scopes end.
 The scope of the mutable reference \emph{r3} only starts in line 7.
-Therefore, the scopes of the mutable reference and the two immutable references do not overlap and the program compiles.
+Therefore, the scopes of the mutable reference and the two immutable references do not overlap, and the program compiles.
 
 
 % \paragraph{Slice type}
@@ -428,13 +424,13 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 \section{Summary \& Outlook}
 \label{sec:summary}
 
-In summary, programming languages based on ownership types can eliminate many memory-related issues by enforcing strict rules on the existence and behaviour of references to values.
+In summary, programming languages based on ownership types can eliminate many memory-related issues by enforcing strict rules on the existence and behavior of references to values.
 Furthermore, ownership types are integral to the Rust programming.
-In comparison to more commonly used low-level programming languages like C, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time, allowing for strong runtime performance and omitting the need for many manual, rigorous and error-prone memory reference checks that programers used to have to perform.
-Even though the Rust compiler forces developers to think more intentially about how they deal with memory through ownership, they will receive helpful compile-time error messages instead of crashes or undefined behaviour at runtime if they do something wrong.
+Compared to more commonly used low-level programming languages like C, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time, allowing for strong runtime performance and omitting the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform.
+Even though the Rust compiler forces developers to think more intentionally about how they deal with memory through ownership, they will receive helpful compile-time error messages instead of crashes or undefined behavior at runtime if they do something wrong.
 
 It will be interesting to see how Rust's development will continue in the future.
-Given its rise in popularity as a safe and performant programming language using strict ownership types, the question arises whether ownership types might also be incorporated into more new or existing programming languages in the future.
+Given its rise in popularity as a safe and performant programming language using strict ownership types, the question arises of whether ownership types might also be incorporated into more new or existing programming languages in the future.
 
 
 \bibliographystyle{ACM-Reference-Format}
