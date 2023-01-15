@@ -114,9 +114,10 @@ println!("{}", *vptr); // compiler error
 \end{lstlisting}
 
 Syntactically, the C++ and Rust versions are very similar.
-Notably, the \emph{push} method in line 3 has the following signature: \verb|pub fn push(&mut self, value: T)|.
+Notably, the \emph{push} method in line 3 has the following signature: \verb|pub fn push(&mut self, value: T)| \cite{rust-vector-documentation}.
 While the C++ version will compile the program successfully, causing a run-time security vulnerability, the Rust compiler shows an error: "Cannot borrow \emph{v} as mutable more than once at a time."
 For now, it suffices to say that the Rust compiler disallows both lines 2 and 3 to create mutable references to \emph{v} if one of the mutable references is used later (like \emph{vptr} is in line 4).
+% TODO: not allowing multiple mutable references only works through lifetimes, which are unexplained
 In \ref{sec:rust-references}, we will explain in more detail how the Rust borrow-checker is able to detect this problem using Rust's ownership rules.
 
 % A quick definition of ownership: you cannot have mutability and alias at the same time.
@@ -128,7 +129,6 @@ In \ref{sec:rust-references}, we will explain in more detail how the Rust borrow
 %   &s
 % }
 % \end{lstlisting}
-
 
 \subsection{State of the art}
 \label{sec:state-of-the-art}
@@ -236,7 +236,8 @@ For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as
 \end{enumerate}
 
 
-% \subsection{Extensions}
+\subsection{Advantages and disadvantages}
+
 
 % \paragraph{Ownership transfer}
 
@@ -251,11 +252,25 @@ For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as
 \section{Implementation in Rust}
 \label{sec:implementation-in-rust}
 
+% TODO: move these links to ownership theory to individual section of Rust explanation
 The modern programming language Rust uses an extended version of the ownership type model \emph{owners-as-modifiers}.
 As will be discussed in this chapter, Rust allows both read-only and mutable references in a controlled manner.
 
 All of the information gathered in this chapter is derived from the "Understanding Ownership" section from the Rust Book \cite{rust-book}.
 If anything was retrieved from other sources, it would be cited as such.
+
+\subsection{How Rust implements ownership types}
+\label{sec:rust-ownership-types}
+
+% The modern programming language Rust uses an extended version of the ownership type model \emph{owners-as-modifiers}.
+% In addition to read-only references, which are allowed in owners-as-modifiers, Rust also supports mutable references in a controlled manner.
+
+% TODO: discuss why rust allows mutable: more useful, but why?
+
+
+% TODO: compare implementation of ownership types to other languages
+% It is not trivial to compare the implementation of the ownership concept of Rust with that of another programming language because Rust is kind of the only one doing so.
+
 
 \subsection{Memory allocation system}
 \label{sec:memory-allocation}
@@ -405,9 +420,16 @@ s.push_str("hello");
 \subsection{References and borrowing}
 \label{sec:rust-references}
 
-As pointed out in \ref{sec:owners-as-dominators}, many common programming idioms require some form of aliasing or referencing.
+Object aliasing has already been defined as the concept of accessing the same memory through different symbolic names.
+Specifically, the \emph{owners-as-modifiers} approach relies on implementing the aliasing concept.
+Therefore, any programming language based on this form of ownership type must provide a way of achieving this behavior.
+One way to implement this behavior is by allowing the use of \emph{pointers}, which are commonly used in low-level programming languages.
+However, even though they exist, "working with raw pointers in Rust is uncommon [and] typically limited to a few patterns" \cite{rust-pointer-documentation}.
+% Instead, Rust primarily uses \emph{references} as the preferred way of implementing aliasing.
+Instead, Rust uses \emph{references} as the preferred way of implementing aliasing.
+
 In Rust, a \emph{reference} is an address that points to a value that is owned by another variable.
-Unlike traditional \emph{pointers} used in other low-level programming languages, a reference is guaranteed to point to a valid value.
+Unlike traditional \emph{pointers}, a reference is guaranteed by the compiler to point to a valid value.
 In Rust terminology, creating a reference is called \emph{borrowing}.
 A reference does not own the value it points to.
 Therefore, only the reference itself, not the value that the reference has borrowed, is dropped at the end of the reference's scope.
@@ -485,7 +507,16 @@ The scope of the mutable reference \emph{r3} only starts in line 7.
 Therefore, the scopes of the mutable reference and the two immutable references do not overlap, and the program compiles.
 
 
-% \paragraph{Slice type}
+\paragraph{Limits of the ownership approach}
+
+% TODO: explain how rust uses unsafe code to implement std library
+% discuss limitations of ownership types: any structures that need raw pointers? how can one deal with them?
+
+% Rust's std lib is largely implemented using unsafe code (that doesn't strictly follow the ownership rules) for performance reasons (I think, maybe there are also other reasons).
+% If the ownership semantics are no longer used to prove the correctness of a program, how is the safety of the std lib guaranteed?
+% Is it guaranteed at all.
+% If not, a compelling argument for ownership types with an unsafe implementation is still, that the programmers rarely/never have to use the unsafe code, and will make less mistakes.
+% The API of the stdlib is safe, the implementation isn't.
 
 
 % \paragraph{Lifetimes}
