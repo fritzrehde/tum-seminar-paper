@@ -74,12 +74,11 @@ Commonly used programming languages, such as C and C++, provide a lot of freedom
 Furthermore, the developers must perform rigorous testing to ensure the software handles surprising conditions.
 Even though software analysis tools can detect many instances of memory management issues, the NSA recommends the use of inherently memory-safe languages.
 
-% TODO: clarify that reference and alias is used synonymously in this paper
-\paragraph{Memory safety issue example}
+\paragraph{Example}
 
-% The following describes an example in which ownership types can prevent a memory security issue.
+Ralf Jung \cite{understanding-evolving-rust} provides a typical example of how ownership types can prevent a memory safety issue.
 
-Ralf Jung \cite{understanding-evolving-rust} demonstrates the kind of memory safety issues that commonly arise in systems programming languages with the following example in C++.
+First, we will explore how a memory safety problem is created in the following C++ code snippet that does not use the ownership concept.
 
 \begin{lstlisting}
 std::vector<int> v { 10, 11 };
@@ -88,38 +87,37 @@ v.push_back(12);
 std::cout << *vptr; // bug (use-after-free)
 \end{lstlisting}
 
-% TODO: use less "we"
-First, we initialize a vector \emph{v} that contains two integers, which are stored in a buffer in memory.
-% The initial contents of the vector \emph{vec} are stored in a buffer in memory.
+We initialize a vector \emph{v} that contains two integers stored in a buffer in memory.
 Next, we create a pointer \emph{vptr} that points into this buffer, specifically to the place where the second element (with current value 11) is stored.
 Now, both \emph{v} and \emph{vptr} point to (overlapping parts of) the same buffer.
 % TODO: change wording from source
 We say that the two pointers are aliasing.
 Then, we push a new element to the end of \emph{v}.
 If the vector's capacity were large enough, the new element would be appended to the buffer.
-However, we will assume there is no more space for an additional element, so a new buffer is allocated and all the existing elements are moved over.
+However, we will assume there is no more space for an additional element, so a new buffer is allocated, and all the existing elements are moved over.
 This case is interesting because \emph{vptr} still points to the old buffer!
 In other words, adding a new element to \emph{v} has turned \emph{vptr} into a dangling pointer.
-
-% This is possible because both pointers were aliasing: an action through a pointer (v) will in general also affect all its aliases (vptr).
-More generally, we can observe that an action through a pointer (\emph{v}) will also affect all of its aliases (\emph{vptr}).
+Therefore, trying to access the value the dangling pointer \emph{vptr} points to will cause a use-after-free bug.
+% More generally, we can observe that an action through a pointer (\emph{v}) will also affect all of its aliases (\emph{vptr}).
+The main problem here is that such memory issues cannot be detected at compile time.
 
 % TODO: add graph from paper to visualize
 
-% The fact that \emph{vptr} is now a dangling pointer becomes a problem in the last line, where we load from vptr.
-Finally, trying to access the value the dangling pointer \emph{vptr} points to will cause a use-after-free bug.
-% Such runtime bugs are very hard to track down.
-% The main problem here is that such use-after-free bugs cannot be detected at compile time.
-
-Now, a similar piece of code in Rust will explored.
+Now, we will demonstrate how ownership types in Rust allow the compiler to detect such a use-after-free bug.
+Consider the following Rust translation of our C++ example:
 
 \begin{lstlisting}
 let mut v = vec![10, 11];
-let vptr = &mut v[1]; // Points *into* ‘v‘.
-v.push(12); // May reallocate the backing store of v.
-println!("{}", *vptr); // Compiler error
+let vptr = &mut v[1]; // points *into* v
+v.push(12);
+println!("{}", *vptr); // compiler error
 \end{lstlisting}
 
+Syntactically, the C++ and Rust versions are very similar.
+Notably, the \emph{push} method in line 3 has the following signature: \verb|pub fn push(&mut self, value: T)|.
+While the C++ version will compile the program successfully, causing a run-time security vulnerability, the Rust compiler shows an error: "Cannot borrow \emph{v} as mutable more than once at a time."
+For now, it suffices to say that the Rust compiler disallows both lines 2 and 3 to create mutable references to \emph{v} if one of the mutable references is used later (like \emph{vptr} is in line 4).
+In \ref{sec:rust-references}, we will explain in more detail how the Rust borrow-checker is able to detect this problem using Rust's ownership rules.
 
 % A quick definition of ownership: you cannot have mutability and alias at the same time.
 % My own example:
@@ -172,7 +170,7 @@ Objects that are in the same ownership context are called \emph{siblings} or \em
 \subsection{Owners-as-dominators}
 \label{sec:owners-as-dominators}
 
-One such flavor is the \emph{owners-as-dominators model} \cite{ownership-types-survey}, which is an implementation of the original Flexible Alias Protection concept \cite{flexible-alias-protection}, which described a core encapsulation mechanism.
+One such flavor is the \emph{owners-as-dominators} model \cite{ownership-types-survey}, which is an implementation of the original Flexible Alias Protection concept \cite{flexible-alias-protection}, which described a core encapsulation mechanism.
 
 Yang Zhao and John Boyland \cite{permission-ownership-types} specify that, with owners-as-dominators, each regular object must have another object or a special global "world" as its owner.
 Additionally, each object can own zero or more objects.
@@ -195,7 +193,7 @@ The owners-as-dominators principle provides a simple, clear and strong guarantee
 \subsection{Owners-as-modifiers}
 \label{sec:owners-as-modifiers}
 
-Another kind is the owners-as-modifiers model \cite{ownership-types-survey}, which is a weaker form of owners-as-dominators that additionally allows read-only references.
+Another kind is the \emph{owners-as-modifiers} model \cite{ownership-types-survey}, which is a weaker form of owners-as-dominators that additionally allows read-only references.
 A read-only reference can only be used to read files and call pure methods, which may not modify any existing objects.
 In essence, aliasing is unrestricted, but only the owner of an object can modify it.
 Owners-as-modifiers extend the rules specified for owners-as-dominators.
@@ -219,7 +217,7 @@ The owners-as-modifiers principle expands the programming possibilities of the o
 \label{sec:owners-as-ombudsmen}
 
 % TODO: is it obvious that this contains exact sentences from citation?
-The paper that first introduced the idea of owners-as-ombudsmen \cite{owners-as-ombudsmen} describes the concept as an extension of the owners-as-dominators model.
+The paper that first introduced the idea of \emph{owners-as-ombudsmen} \cite{owners-as-ombudsmen} describes the concept as an extension of the owners-as-dominators model.
 With owners-as-dominators, every path from the root to an object must pass through its owner.
 Thus, encapsulated objects must have a single \emph{bridge object} that mediates all external interaction with its internal objects.
 The owners-as-ombudsmen approach, on the other hand, relaxes the single bridge object constraint and allows several bridge objects to collectively define an aggregate with a shared representation.
@@ -251,7 +249,7 @@ For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as
 
 
 \section{Implementation in Rust}
-\label{sec:implementation-rust}
+\label{sec:implementation-in-rust}
 
 The modern programming language Rust uses an extended version of the ownership type model \emph{owners-as-modifiers}.
 As will be discussed in this chapter, Rust allows both read-only and mutable references in a controlled manner.
