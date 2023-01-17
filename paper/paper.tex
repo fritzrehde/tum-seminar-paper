@@ -4,6 +4,7 @@
 \usepackage{booktabs} % For formal tables
 \usepackage{subcaption}
 \usepackage{tikz}
+\usetikzlibrary{fit}
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
 \usepackage{hyphenat}
@@ -21,13 +22,14 @@
   numbersep=5pt,
   xleftmargin=\parindent,
   numberstyle=\color{gray},
-  keywordstyle=\color{blue},
-  commentstyle=\color{dkgreen},
-  stringstyle=\color{mauve},
+  % keywordstyle=\color{blue},
+  % commentstyle=\color{dkgreen},
+  % stringstyle=\color{mauve},
   breaklines=true,
   breakatwhitespace=true,
   tabsize=2
 }
+\pagenumbering{gobble}
 
 \begin{document}
 \title{Ownership types in theory and practice (in Rust)}
@@ -154,8 +156,6 @@ These approaches differ in what kind of, if any, aliases they allow.
 \section{Ownership types in theory}
 \label{sec:theory}
 
-% TODO: second source to provide more detail of each owners-as-...
-% TODO: maybe add numbered list (like in source material) for the rules like in the Rust section
 If not otherwise indicated, all of the information gathered in this chapter stems from the Ownership Types Survey \cite{ownership-types-survey}.
 
 
@@ -168,7 +168,7 @@ The core concept of ownership types is that objects can be \emph{owners} of othe
 Given objects \emph{a} and \emph{b}, \emph{a} is \emph{inside} \emph{b} if \emph{a} is the same object as \emph{b} or \emph{a} is \emph{owned} by \emph{b}, transitively.
 The \emph{outside} relation is the converse of the \emph{inside} relation.
 
-In most ownership-type variants, the heap is divided into different regions called ownership contexts.
+In most ownership-type variants, the heap is divided into different regions called \empg{ownership contexts}.
 Each object has one single ownership context, which is the set of all objects it owns.
 Objects that are in the same ownership context are called \emph{siblings} or \emph{peers}.
 
@@ -176,24 +176,61 @@ Objects that are in the same ownership context are called \emph{siblings} or \em
 \subsection{Owners-as-dominators}
 \label{sec:owners-as-dominators}
 
-One such flavor is the \emph{owners-as-dominators} model \cite{ownership-types-survey}, which is an implementation of the original Flexible Alias Protection concept \cite{flexible-alias-protection}, which described a core encapsulation mechanism.
+One such flavor is the \emph{owners-as-dominators} model \cite{ownership-types-survey}, which is an implementation of the core encapsulation mechanism from the original Flexible Alias Protection concept \cite{flexible-alias-protection}.
 
-Yang Zhao and John Boyland \cite{permission-ownership-types} specify that, with owners-as-dominators, each regular object must have another object or a special global "world" as its owner.
-Additionally, each object can own zero or more objects.
-Therefore, the ownership relation between multiple objects must be acyclic, meaning that there may be no circles in a graph where the nodes represent objects and the vertices represent the "owns" relation.
-Hence, the ownership relation forms an ownership hierarchy tree, where the root is the "world" and each object is inside its owner.
-Through this object encapsulation, any external reference to an object is only possible through its owner.
-This model gets its name from the fact that any object acting as an owner is considered to be a \emph{dominator} for all of the owned objects.
+Yang Zhao and John Boyland \cite{permission-ownership-types} specify that, with owners-as-dominators, each regular object is owned by exactly one object and can be the owner of zero or more objects.
+Objects can also be owned by a special global object called \emph{world}, which cannot be owned anymore.
+This \emph{world} object is the root of the acyclic ownership hierarchy tree that represents the ownership relation.
+In this tree structure, each object is inside its owner.
+This model is named \emph{owners-as-dominators} because any object acting as an owner is considered to be a \emph{dominator} for all of its owned objects.
 
-% The rules that must be fulfilled for \emph{a} to validly reference \emph{b} are that either \emph{a} is owned by \emph{b}, \emph{a} and \emph{b} are siblings or \emph{b} is outside \emph{a}.
-The survey \cite{ownership-types-survey} defines that at least one of the following rules must apply for object \emph{a} to validly reference \emph{b}.
+The ownership survey \cite{ownership-types-survey} defines that at least one of the following rules must apply for object \emph{a} to validly reference \emph{b}.
 \begin{enumerate}
   \item \emph{a} is the owner of \emph{b},
   \item \emph{a} and \emph{b} are siblings, or
   \item \emph{b} is outside of \emph{a}.
 \end{enumerate}
 
+% \begin{figure}
+%   \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
+%     \node[object] (A) {a};
+%     \node[object] (C) [right=of A,yshift=1cm] {c};
+%     \node[object] (B) [below=of A] {b};
+%     \node[draw,thin,inner sep=2mm,fit=(A.west) (B) (B) (A.west)] {};
+
+%     \draw[->,thick] (A.south) to node[left] {owns} (B.north);
+%     \draw[->,thick,dashed] (C.south) to node[right] {no access} (B.north);
+%   \end{tikzpicture}
+
+%   \caption{Owners-as-modifiers \cite{ownership-types-survey}}
+% \end{figure}
+
+\begin{figure}
+  \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
+    \node[object] (World) {world};
+    \node[object] (A) [below=of World] {a};
+    \node[object] (C) [right=of A] {c};
+    \node[object] (B) [below=of A] {b};
+
+    \draw[->,thick] (World.south) to node[left] {owns} (A.north);
+    \draw[->,thick] (World.south) to node[right] {owns} (C.north);
+    \draw[->,thick] (A.south) to node[left] {owns} (B.north);
+    \draw[->,thick,dashed] (C.south) to node[right] {no access} (B.north);
+  \end{tikzpicture}
+
+  \caption{Owners-as-modifiers}
+\end{figure}
+
+\paragraph{Implications}
+
+An implication of this model is that any external reference to an object is only possible through its owner.
+% TODO: what does this implicate further?
+
+\paragraph{Advantages and disadvantages}
+
+It is the strictest discipline.
 The owners-as-dominators principle provides a simple, clear and strong guarantee but makes programming more difficult by not allowing common idioms through aliasing.
+% TODO: example of such idiom that isn't representable
 
 
 \subsection{Owners-as-modifiers}
