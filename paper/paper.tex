@@ -192,25 +192,6 @@ The ownership survey \cite{ownership-types-survey} defines that at least one of 
   \item \emph{b} is outside of \emph{a}.
 \end{enumerate}
 
-\paragraph{Implications}
-
-\begin{figure}
-  \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
-    \node[object] (World) {world};
-    \node[object] (A) [below=of World] {a};
-    \node[object] (C) [right=of A] {c};
-    \node[object] (B) [below=of A] {b};
-
-    \draw[->,thick] (World) to node[left] {owns} (A);
-    \draw[->,thick] (World) to node[right] {owns} (C);
-    \draw[->,thick] (A) to node[left] {owns} (B);
-    \draw[->,thick,dashed] (C) to node[right] {invalid access} (B);
-  \end{tikzpicture}
-
-  \caption{Owners-as-modifiers}
-  \label{fig:owners-as-modifiers}
-\end{figure}
-
 \begin{figure}
   \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
     \node[object] (World) {world};
@@ -221,13 +202,49 @@ The ownership survey \cite{ownership-types-survey} defines that at least one of 
     \draw[->,thick] (World) to (Car);
     \draw[->,thick] (World) to (Driver);
     \draw[->,thick] (Car) to (Engine);
-    \draw[->,thick,dashed] (Car) to node[above] {valid} (Driver);
-    \draw[->,thick,dashed] (World) edge[bend right=45] node[left] {invalid} (Engine);
+
+    % TODO: make green darker with:
+    % \definecolor{mynicegreen}{RGB}{102,252,102}
+
+    \draw[->,thick,dashed,green] (Car) edge[bend left] node[right] {owner} (Engine);
+    % \draw[->,thick,dashed,green] (Engine) edge[bend left] node[left] {inside} (Car);
+    \draw[->,thick,dashed,green] (Engine) edge[bend left=25] node[left] {inside} (World);
+    \draw[->,thick,dashed,green] (Car) edge node[above] {sibling} (Driver);
+    \draw[->,thick,dashed,red] (World) edge[bend right=90] node[left] {invalid} (Engine);
+    \draw[->,thick,dashed,red] (Driver) edge[bend left] node[right] {invalid} (Engine);
   \end{tikzpicture}
 
-  \caption{Owners-as-modifiers \cite{flexible-alias-protection}, solid lines indicate "owns"}
-  \label{fig:owners-as-modifiers2}
+  \caption{Owners-as-dominators \cite{flexible-alias-protection}: Solid lines indicate "owns" and dotted lines indicate "references".}
+  \label{fig:owners-as-dominators}
 \end{figure}
+
+Figure \ref{fig:owners-as-dominators} was adapted from an example by Clarke et al. \cite{flexible-alias-protection} and demonstrates valid (green) and an invalid (red) references in an ownership hierarchy.
+% TODO: make more precise
+The validity of each valid reference is proven by each of the rules defined above.
+
+\begin{enumerate}
+  \item The object \emph{car} owns the object \emph{engine}, meaning that the former can validly reference the latter according to the first rule.
+  \item The objects \emph{car} and \emph{driver} are siblings, meaning that they can validly reference each other according to the second rule.
+  \item The object \emph{world} is outside the object \emph{engine} because \emph{engine} is transitively owned by \emph{world} via \emph{car}.
+  Therefore, according to the third rule, \emph{engine} can validly reference \emph{world}.
+\end{enumerate}
+
+
+
+\paragraph{Implications}
+
+An implication of this model is that any external reference to an object is only possible through its owner.
+This is also examplified in Figure \ref{fig:owners-as-dominators} through the object \emph{world} trying to access \emph{engine}.
+This is not allowed in the owners-as-dominators model.
+Instead, \emph{world} can only reference \emph{engine} through the \emph{engine}'s owner \emph{car}.
+
+Its strictness can be seen as both an advantage and disadvantage of the owners-as-dominators model.
+% TODO: reference ownership survey better, as this is nearly copied
+The advantage is that model provides a simple, clear and strong guarantee that allows for reasoning about various properties of the code.
+% TODO: provide example of advantages
+However, it also makes programming more difficult by not allowing common idioms that involve aliasing.
+% TODO: example of such idiom that isn't representable
+
 
 % TODO: Add rust section on taking ownership of fields inside type
 % Struct Car {
@@ -247,17 +264,8 @@ The ownership survey \cite{ownership-types-survey} defines that at least one of 
 % type-checking techniques.
 % Originating as the formalisation of the core of Flexible Alias Protec-
 
-An implication of this model is that any external reference to an object is only possible through its owner.
-Figure \ref{fig:owners-as-modifiers} provides an example of an invalid reference from object \emph{c} to \emph{b}, as there exists no direct link in the ownership hierarchy.
-% TODO: what does this implicate further?
+% IMPORTANT TODO: question: can an object access owned children transitively? How is it in Rust (if someone asks me this question)?
 
-It is the strictest discipline.
-The owners-as-dominators principle provides a simple, clear and strong guarantee but makes programming more difficult by not allowing common idioms through aliasing.
-% TODO: example of such idiom that isn't representable
-
-% IMPORTANT TODO: question: can an object access owned children transitively?
-
-% Advantages: useful for reasoning about properties of code.
 
 
 \subsection{Owners-as-modifiers}
