@@ -30,6 +30,9 @@
   tabsize=2
 }
 \pagenumbering{gobble}
+\definecolor{cgreen}{RGB}{60,201,65}
+
+
 
 \begin{document}
 \title{Ownership types in theory and practice (in Rust)}
@@ -105,8 +108,8 @@ If the vector's capacity were large enough, the new element would be appended to
 However, we will assume there is no more space for an additional element, so a new buffer is allocated, and all the existing elements are moved over.
 This case is interesting because \emph{vptr} still points to the old buffer!
 In other words, adding a new element to \emph{v} has turned \emph{vptr} into a dangling pointer.
-Therefore, trying to access the value the dangling pointer \emph{vptr} points to will cause a use-after-free bug.
-% More generally, we can observe that an action through a pointer (\emph{v}) will also affect all of its aliases (\emph{vptr}).
+Therefore, trying to access the value which the dangling pointer \emph{vptr} points to will cause a use-after-free bug.
+More generally, we can observe that an action through a pointer (\emph{v}) will also affect all of its aliases (\emph{vptr}), even though these aliases might not expect a change.
 The main problem here is that such memory issues cannot be detected at compile time.
 
 % TODO: add graph from paper to visualize
@@ -156,8 +159,12 @@ These approaches differ in what kind of, if any, aliases they allow.
 \section{Ownership types in theory}
 \label{sec:theory}
 
-If not otherwise indicated, all of the information gathered in this chapter stems from the Ownership Types Survey \cite{ownership-types-survey}.
+In object-oriented programs, an object can reference any other object and read and modify its fields through direct field accesses or method calls.
+Such programs with arbitrary object structures are difficult to understand, to maintain, and to reason about. \cite{lightweight-ownership}
 
+Ownership types can limit which objects can be referenced and can specify whether the referenced objects may be mutated or just read from.
+
+If not otherwise indicated, all of the information gathered in this chapter stems from the Ownership Types Survey \cite{ownership-types-survey}.
 
 \subsection{Domain specific terms}
 \label{sec:domain-specific-terms}
@@ -165,8 +172,8 @@ If not otherwise indicated, all of the information gathered in this chapter stem
 In the following, some terms from the Ownership Types Survey \cite{ownership-types-survey}, which are commonly used throughout this paper, are defined.
 
 The core concept of ownership types is that objects can be \emph{owners} of other objects.
+
 Given the two objects \emph{a} and \emph{b}, \emph{a} is \emph{inside} \emph{b} if \emph{a} is the same object as \emph{b} or \emph{a} is \emph{owned} by \emph{b}, transitively.
-% Given the two objects \emph{a} and \emph{b}, \emph{a} is \emph{outside} \emph{b} if \emph{b} is the same object as \emph{a} or \emph{b} is \emph{owned} by \emph{a}, transitively.
 The \emph{outside} relation is the converse of the \emph{inside} relation.
 
 In most ownership-type variants, the heap is divided into different regions called \emph{ownership contexts}.
@@ -182,7 +189,7 @@ One such flavor is the \emph{owners-as-dominators} model \cite{ownership-types-s
 Yang Zhao and John Boyland \cite{permission-ownership-types} specify that, with owners-as-dominators, each regular object is owned by exactly one object and can be the owner of zero or more objects.
 Objects can also be owned by a special global object called \emph{world}, which cannot be owned anymore.
 This \emph{world} object is the root of the acyclic ownership hierarchy tree that represents the ownership relation.
-In this tree structure, each object is \emph{inside} its owner.
+In this tree structure, each object is inside its owner.
 This model is named \emph{owners-as-dominators} because any object acting as an owner is considered to be a \emph{dominator} for all of its owned objects.
 
 The ownership survey \cite{ownership-types-survey} defines that at least one of the following rules must apply for object \emph{a} to validly reference \emph{b}.
@@ -203,12 +210,9 @@ The ownership survey \cite{ownership-types-survey} defines that at least one of 
     \draw[->,thick] (World) to (Driver);
     \draw[->,thick] (Car) to (Engine);
 
-    % TODO: make green darker with:
-    % \definecolor{mynicegreen}{RGB}{102,252,102}
-
-    \draw[->,thick,dashed,green] (Car) edge[bend left] node[right] {owner} (Engine);
-    \draw[->,thick,dashed,green] (Engine) edge[bend left] node[left] {inside} (Car);
-    \draw[->,thick,dashed,green] (Car) edge node[above] {sibling} (Driver);
+    \draw[->,thick,dashed,cgreen] (Car) edge[bend left] node[right] {owner} (Engine);
+    \draw[->,thick,dashed,cgreen] (Engine) edge[bend left] node[left] {inside} (Car);
+    \draw[->,thick,dashed,cgreen] (Car) edge node[above] {sibling} (Driver);
     \draw[->,thick,dashed,red] (World) edge[bend right=90] node[left] {invalid} (Engine);
     \draw[->,thick,dashed,red] (Driver) edge[bend left] node[right] {invalid} (Engine);
   \end{tikzpicture}
@@ -226,16 +230,6 @@ The object \emph{car} owns the object \emph{engine}, meaning that \emph{car} can
 
 An owner being able to access its owned objects is the most trivial and intuitive rule.
 
-\paragraph{Outside/inside}
-
-The object \emph{engine} is \emph{inside} the object \emph{car} because \emph{engine} is owned by \emph{car}.
-Conversely, \emph{car} is outside \emph{engine}.
-Therefore, \emph{engine} can validly reference \emph{car} according to the third rule.
-
-Even the original Flexible Alias Protection model, which these ownership types are based on, imposed the restriction "that the only objects that can access [an object] are the object that owns it and other objects inside that [object]" \cite{flexible-alias-protection}.
-The implication is that this model only protects objects from external access.
-Internally, an object can still access its owner (and its owner's owner etc.).
-
 \paragraph{Sibling}
 
 The objects \emph{car} and \emph{driver} are siblings, meaning that they can validly reference each other according to the second rule.
@@ -243,28 +237,50 @@ The objects \emph{car} and \emph{driver} are siblings, meaning that they can val
 The lack of further rules implies that siblings are the only objects that an object can validly reference besides the objects it owns and the objects it is inside of.
 The sibling relationship would, therefore, be used for objects that exist independently but can still interact with each other.
 
+\paragraph{Outside/inside}
+
+The object \emph{engine} is inside the object \emph{car} because \emph{engine} is owned by \emph{car}.
+Conversely, \emph{car} is outside \emph{engine}.
+Therefore, \emph{engine} can validly reference \emph{car} according to the third rule.
+
+The original Flexible Alias Protection model, which these ownership types are based on, also imposed the restriction "that the only objects that can access [an object] are the object that owns it and other objects inside that [object]" \cite{flexible-alias-protection}.
+The implication is that this model only protects objects from external access.
+Internally, an object can still access its owner (and its owner's owner etc.).
+
+% TODO: why iterators can be implemented because of 3. outside rule
+% This rule may seem quite unintuitive, which is underlined by the fact that Dietl et al.'s version of owners-as-dominators leave this rule out.
+
+% Dietl et al. claim that Clarke's owners-as-dominators property is weakened "by allowing instances of inner classes to access the representation of the instance of the outer class they are associated with.
+% Dietl et al. claim that, "by allowing instances of inner classes to access the representation of the instance of the outer class they are associated with, [...] they can handle iterators, but not more general forms of sharing."
+% parametric ownership type systems describe ownership properties accurately and
+% guarantee a strong type invariant, ownership parametricity increases the complexity
+% of the type system and the annotation overhead.
+
 \paragraph{Further implications}
 
-Most importantly, these three rules imply that any external reference to an object is only possible through its owner.
-This is also examplified in Figure \ref{fig:owners-as-dominators} where the object \emph{world} is trying to access the object \emph{engine}.
-This is not allowed in the owners-as-dominators model, as \emph{world} is neither a direct owner, a sibling or inside of \emph{engine}.
+Primarily, these three rules imply that any external reference to an object is only possible through its owner.
+This is examplified in Figure \ref{fig:owners-as-dominators} where the object \emph{world} is trying to access the object \emph{engine}, which is not allowed because \emph{world} is neither a direct owner of, a sibling of or inside of \emph{engine}.
 Instead, \emph{world} could only reference \emph{engine} through the \emph{engine}'s owner \emph{car}.
 
-Its strictness can be seen as both an advantage and disadvantage of the owners-as-dominators model.
-% TODO: reference ownership survey better, as this is nearly copied
+According to Dietl et al. \cite{lightweight-ownership}, the owners-as-dominators model restricts \emph{where} references are allowed to point to.
+% TODO: find reference/quote
+Any object that can validly be referenced may be mutated through that reference.
+
+Its strictness can be seen as both an advantage and a disadvantage of the owners-as-dominators model.
 The advantage is that the model provides a simple, clear and strong guarantee that allows for reasoning about various properties of the code.
-% TODO: provide example of advantages
-However, it also makes programming more difficult by not allowing common idioms that involve aliasing.
-% TODO: example of such idiom that isn't representable
+However, it also makes programming more difficult by not allowing common idioms that involve aliasing. \cite{ownership-types-survey}
+
+% TODO: mention that all objects that can be referenced can be mutated
 
 
 % TODO: Add rust section on taking ownership of fields inside type
 % Struct Car {
-%   engine: Engine,
+%   pub engine: Engine,
 % }
 
 % let car = Car::new(Engine::new());
 % let driver = Driver::new();
+% let engine = car.engine;
 
 
 % Abstract. Ownership types were devised nearly 15 years ago to provide
@@ -281,23 +297,51 @@ However, it also makes programming more difficult by not allowing common idioms 
 \label{sec:owners-as-modifiers}
 
 Another kind is the \emph{owners-as-modifiers} model \cite{ownership-types-survey}, which is a weaker form of owners-as-dominators that additionally allows read-only references.
-A read-only reference can only be used to read files and call pure methods, which may not modify any existing objects.
-In essence, aliasing is unrestricted, but only the owner of an object can modify it.
-Owners-as-modifiers extend the rules specified for owners-as-dominators.
+A read-only reference can only be used to read files and call \emph{pure methods}.
+Pure methods are defined as methods that do not modify the fields of any existing objects. \cite{ownership-types-survey}
 
-% For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-modifiers follows the same rules as owners-as-dominators.
-% The only addition is that \emph{r} can also be a valid reference if it is a read-only reference and only pure methods are being called on it.
-For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-modifiers follows the following rules \cite{ownership-types-survey}.
+For \emph{a} to validly reference \emph{b} through reference \emph{r}, at least one of the following rules \cite{ownership-types-survey} must apply.
 \begin{enumerate}
   \item \emph{a} is the owner of \emph{b},
   \item \emph{a} and \emph{b} are siblings, or
   \item \emph{b} is outside of \emph{a}, or
   \item \emph{r} is a read-only reference and only pure methods can be called on it.
 \end{enumerate}
+We can see that the owners-as-modifiers concept extends the rules specified for owners-as-dominators.
+The only additional rule is that a reference can also be valid if it is a read-only reference and only pure methods are being called on it.
 
-According to Werner Dietl and Peter Müller \cite{lightweight-ownership}, a fundamental difference between owners-as-dominator and owners-as-modifiers is that the former restricts \emph{where} references are allowed to point to, while the latter allows references to point to objects in arbitrary contexts, but restricts \emph{how} references can be used.
+\begin{figure}
+  \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
+    \node[object] (World) {world};
+    \node[object] (Car) [below=of World] {car};
+    \node[object] (Driver) [right=of Car,xshift=1.5cm] {driver};
+    \node[object] (Engine) [below=of Car] {engine};
 
-The owners-as-modifiers principle expands the programming possibilities of the owners-as-modifiers principle and fulfills the requirements needed for the verification of the functional correctness of object-oriented programs.
+    \draw[->,thick] (World) to (Car);
+    \draw[->,thick] (World) to (Driver);
+    \draw[->,thick] (Car) to (Engine);
+
+    \draw[->,thick,dashed,cgreen] (Car) edge[bend left] node[right] {owner} (Engine);
+    \draw[->,thick,dashed,cgreen] (Engine) edge[bend left] node[left] {inside} (Car);
+    \draw[->,thick,dashed,cgreen] (Car) edge node[above] {sibling} (Driver);
+    \draw[->,thick,dashed,orange] (World) edge[bend right=90] node[left] {read only} (Engine);
+    \draw[->,thick,dashed,orange] (Driver) edge[bend left] node[right] {read only} (Engine);
+  \end{tikzpicture}
+
+  \caption{Owners-as-modifiers \cite{ownership-types-survey}: Solid lines indicate "owns" and dotted lines indicate "references".}
+  \label{fig:owners-as-modifiers}
+\end{figure}
+
+\paragraph{Implications}
+
+Dietl et al. \cite{lightweight-ownership} suggest that the owners-as-modifiers approach allows references to point to objects in arbitrary contexts, but restricts \emph{how} references can be used.
+In particular, any object can be referenced by any given object.
+However, only an object that is the owner of, a sibling of or inside of another given object may receive a reference to that object that allows mutating the object.
+Figure \ref{fig:owners-as-modifiers} demonstrates that all other objects, such as \emph{world} or \emph{driver}, which may not be allowed to obtain a mutable reference to an object for the reasons above, can still receive read access to said object.
+
+% TODO: find better disadvantage
+A disadvantage of the model may be the added complexity of read-only references.
+However, its advantage is that it expands the programming possibilities of the owners-as-dominators principle and fulfills the requirements needed for the verification of the functional correctness of object-oriented programs.
 
 
 % \subsection{Owners-as-ombudsmen}
@@ -336,6 +380,7 @@ The owners-as-modifiers principle expands the programming possibilities of the o
 
 \section{Implementation in Rust}
 \label{sec:implementation-in-rust}
+
 
 % TODO: move these links to ownership theory to individual section of Rust explanation
 The modern programming language Rust uses an extended version of the ownership type model \emph{owners-as-modifiers}.
@@ -402,6 +447,9 @@ The following describes how the concept of ownership is implemented in Rust.
 \subsection{Transferring ownership}
 \label{sec:rust-transferring-ownership}
 
+One common restriction to the early ownership systems is that the owner of an object must be set upon creation and then fixed for the lifetime of the object \cite{ownership-types-survey}.
+Rust extends the original ownership concepts by allowing the ownership of an object to be transferred.
+
 First, one must differentiate between values that are stored on the stack and those stored on the heap.
 In Rust, primitive data types (e.g. signed 32-bit integers \emph{i32}) are stored on the stack since their sizes are small and known at compile time.
 In contrast, values are stored on the heap if their size is dynamic and, therefore, unknown at compile time.
@@ -424,7 +472,8 @@ In Rust terminology, \emph{a} is \emph{moved} into \emph{b}.
 After the move, \emph{a} is no longer valid, and \emph{b} is the new owner of the value.
 
 Heap-based values will always be generated by a function at runtime.
-Therefore, one can generalize the above scenario to ownership being transferred from the variable \emph{a} to the variable \emph{b} when \emph{b} is assigned to the return value \emph{a} of \emph{foo}.
+In the above example, the return value of the function \verb|HeapBasedType::default()| is moved into \emph{a}.
+Furthermore, one can generalize the above scenario to ownership being transferred from the variable \emph{a} to the variable \emph{b} when \emph{b} is assigned to the return value \emph{a} of \emph{foo}.
 \begin{lstlisting}
 fn main() {
   let b = foo();
@@ -463,7 +512,8 @@ Therefore, Rust prevents you from accessing the invalid \emph{x} in the third li
 
 In contrast to heap-based values, the size of stack-based values is known at compile time and is usually small.
 Therefore, stack-based values in Rust are \emph{copied} instead of \emph{moved}.
-Internally, this works because primitive types are annotated with and implement the \emph{Copy} trait.
+% TODO: explain copy trait
+Internally, this works because primitive types are annotated with the \emph{Copy} trait.
 
 Besides the heap-allocated \emph{String} type, Rust also supports string literals \emph{\&str}, which are stored on the stack.
 
@@ -594,8 +644,13 @@ Since \emph{r1} and \emph{r2} are not used after line 5, that is where their sco
 The scope of the mutable reference \emph{r3} only starts in line 7.
 Therefore, the scopes of the mutable reference and the two immutable references do not overlap, and the program compiles.
 
+% \paragraph{Lifetimes}
 
-\paragraph{Limits of the ownership approach}
+% TODO: explain how dangling references are prevented
+
+
+
+% \paragraph{Limits of the ownership approach}
 
 % TODO: explain how rust uses unsafe code to implement std library
 % discuss limitations of ownership types: any structures that need raw pointers? how can one deal with them?
@@ -605,11 +660,6 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 % Is it guaranteed at all.
 % If not, a compelling argument for ownership types with an unsafe implementation is still, that the programmers rarely/never have to use the unsafe code, and will make less mistakes.
 % The API of the stdlib is safe, the implementation isn't.
-
-
-% \paragraph{Lifetimes}
-
-% TODO: explain how dangling references are prevented
 
 
 
