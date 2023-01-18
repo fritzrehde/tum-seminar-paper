@@ -166,7 +166,7 @@ In the following, some terms from the Ownership Types Survey \cite{ownership-typ
 
 The core concept of ownership types is that objects can be \emph{owners} of other objects.
 Given the two objects \emph{a} and \emph{b}, \emph{a} is \emph{inside} \emph{b} if \emph{a} is the same object as \emph{b} or \emph{a} is \emph{owned} by \emph{b}, transitively.
-Given the two objects \emph{a} and \emph{b}, \emph{a} is \emph{outside} \emph{b} if \emph{b} is the same object as \emph{a} or \emph{b} is \emph{owned} by \emph{a}, transitively.
+% Given the two objects \emph{a} and \emph{b}, \emph{a} is \emph{outside} \emph{b} if \emph{b} is the same object as \emph{a} or \emph{b} is \emph{owned} by \emph{a}, transitively.
 The \emph{outside} relation is the converse of the \emph{inside} relation.
 
 In most ownership-type variants, the heap is divided into different regions called \emph{ownership contexts}.
@@ -182,7 +182,7 @@ One such flavor is the \emph{owners-as-dominators} model \cite{ownership-types-s
 Yang Zhao and John Boyland \cite{permission-ownership-types} specify that, with owners-as-dominators, each regular object is owned by exactly one object and can be the owner of zero or more objects.
 Objects can also be owned by a special global object called \emph{world}, which cannot be owned anymore.
 This \emph{world} object is the root of the acyclic ownership hierarchy tree that represents the ownership relation.
-In this tree structure, each object is inside its owner.
+In this tree structure, each object is \emph{inside} its owner.
 This model is named \emph{owners-as-dominators} because any object acting as an owner is considered to be a \emph{dominator} for all of its owned objects.
 
 The ownership survey \cite{ownership-types-survey} defines that at least one of the following rules must apply for object \emph{a} to validly reference \emph{b}.
@@ -207,8 +207,7 @@ The ownership survey \cite{ownership-types-survey} defines that at least one of 
     % \definecolor{mynicegreen}{RGB}{102,252,102}
 
     \draw[->,thick,dashed,green] (Car) edge[bend left] node[right] {owner} (Engine);
-    % \draw[->,thick,dashed,green] (Engine) edge[bend left] node[left] {inside} (Car);
-    \draw[->,thick,dashed,green] (Engine) edge[bend left=25] node[left] {inside} (World);
+    \draw[->,thick,dashed,green] (Engine) edge[bend left] node[left] {inside} (Car);
     \draw[->,thick,dashed,green] (Car) edge node[above] {sibling} (Driver);
     \draw[->,thick,dashed,red] (World) edge[bend right=90] node[left] {invalid} (Engine);
     \draw[->,thick,dashed,red] (Driver) edge[bend left] node[right] {invalid} (Engine);
@@ -219,28 +218,41 @@ The ownership survey \cite{ownership-types-survey} defines that at least one of 
 \end{figure}
 
 Figure \ref{fig:owners-as-dominators} was adapted from an example by Clarke et al. \cite{flexible-alias-protection} and demonstrates valid (green) and an invalid (red) references in an ownership hierarchy.
-% TODO: make more precise
-The validity of each valid reference is proven by each of the rules defined above.
+Each of the three reference validity rules that were defined previously will be illustrated using this example figure.
 
-\begin{enumerate}
-  \item The object \emph{car} owns the object \emph{engine}, meaning that the former can validly reference the latter according to the first rule.
-  \item The objects \emph{car} and \emph{driver} are siblings, meaning that they can validly reference each other according to the second rule.
-  \item The object \emph{world} is outside the object \emph{engine} because \emph{engine} is transitively owned by \emph{world} via \emph{car}.
-  Therefore, according to the third rule, \emph{engine} can validly reference \emph{world}.
-\end{enumerate}
+\paragraph{Owner}
 
+The object \emph{car} owns the object \emph{engine}, meaning that \emph{car} can validly reference \emph{engine} according to the first rule.
 
+An owner being able to access its owned objects is the most trivial and intuitive rule.
 
-\paragraph{Implications}
+\paragraph{Outside/inside}
 
-An implication of this model is that any external reference to an object is only possible through its owner.
-This is also examplified in Figure \ref{fig:owners-as-dominators} through the object \emph{world} trying to access \emph{engine}.
-This is not allowed in the owners-as-dominators model.
-Instead, \emph{world} can only reference \emph{engine} through the \emph{engine}'s owner \emph{car}.
+The object \emph{engine} is \emph{inside} the object \emph{car} because \emph{engine} is owned by \emph{car}.
+Conversely, \emph{car} is outside \emph{engine}.
+Therefore, \emph{engine} can validly reference \emph{car} according to the third rule.
+
+Even the original Flexible Alias Protection model, which these ownership types are based on, imposed the restriction "that the only objects that can access [an object] are the object that owns it and other objects inside that [object]" \cite{flexible-alias-protection}.
+The implication is that this model only protects objects from external access.
+Internally, an object can still access its owner (and its owner's owner etc.).
+
+\paragraph{Sibling}
+
+The objects \emph{car} and \emph{driver} are siblings, meaning that they can validly reference each other according to the second rule.
+
+The lack of further rules implies that siblings are the only objects that an object can validly reference besides the objects it owns and the objects it is inside of.
+The sibling relationship would, therefore, be used for objects that exist independently but can still interact with each other.
+
+\paragraph{Further implications}
+
+Most importantly, these three rules imply that any external reference to an object is only possible through its owner.
+This is also examplified in Figure \ref{fig:owners-as-dominators} where the object \emph{world} is trying to access the object \emph{engine}.
+This is not allowed in the owners-as-dominators model, as \emph{world} is neither a direct owner, a sibling or inside of \emph{engine}.
+Instead, \emph{world} could only reference \emph{engine} through the \emph{engine}'s owner \emph{car}.
 
 Its strictness can be seen as both an advantage and disadvantage of the owners-as-dominators model.
 % TODO: reference ownership survey better, as this is nearly copied
-The advantage is that model provides a simple, clear and strong guarantee that allows for reasoning about various properties of the code.
+The advantage is that the model provides a simple, clear and strong guarantee that allows for reasoning about various properties of the code.
 % TODO: provide example of advantages
 However, it also makes programming more difficult by not allowing common idioms that involve aliasing.
 % TODO: example of such idiom that isn't representable
@@ -263,9 +275,6 @@ However, it also makes programming more difficult by not allowing common idioms 
 % objects. Furthermore, this notion is statically enforced by now-standard
 % type-checking techniques.
 % Originating as the formalisation of the core of Flexible Alias Protec-
-
-% IMPORTANT TODO: question: can an object access owned children transitively? How is it in Rust (if someone asks me this question)?
-
 
 
 \subsection{Owners-as-modifiers}
@@ -291,36 +300,33 @@ According to Werner Dietl and Peter Müller \cite{lightweight-ownership}, a fund
 The owners-as-modifiers principle expands the programming possibilities of the owners-as-modifiers principle and fulfills the requirements needed for the verification of the functional correctness of object-oriented programs.
 
 
-\subsection{Owners-as-ombudsmen}
-\label{sec:owners-as-ombudsmen}
+% \subsection{Owners-as-ombudsmen}
+% \label{sec:owners-as-ombudsmen}
 
-% TODO: is it obvious that this contains exact sentences from citation?
-The paper that first introduced the idea of \emph{owners-as-ombudsmen} \cite{owners-as-ombudsmen} describes the concept as an extension of the owners-as-dominators model.
-% TODO: this is the same as dominators
-With owners-as-dominators, every path from the root to a given object must pass through that object's owner.
-Thus, encapsulated objects must have a single \emph{bridge object} that mediates all external interaction with its internal objects.
-The owners-as-ombudsmen approach, on the other hand, relaxes the single bridge object constraint and allows several bridge objects to collectively define an aggregate with a shared representation.
-These bridge objects are called \emph{ombudsmen} to emphasize their benevolent nature.
+% % TODO: is it obvious that this contains exact sentences from citation?
+% The paper that first introduced the idea of \emph{owners-as-ombudsmen} \cite{owners-as-ombudsmen} describes the concept as an extension of the owners-as-dominators model.
+% % TODO: this is the same as dominators
+% With owners-as-dominators, every path from the root to a given object must pass through that object's owner.
+% Thus, encapsulated objects must have a single \emph{bridge object} that mediates all external interaction with its internal objects.
+% The owners-as-ombudsmen approach, on the other hand, relaxes the single bridge object constraint and allows several bridge objects to collectively define an aggregate with a shared representation.
+% These bridge objects are called \emph{ombudsmen} to emphasize their benevolent nature.
 
-% The last flavor of ownership types is the owners-as-ombudsmen approach \cite{ownership-types-survey}, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
-% This is achieved by allowing multiple objects to define a shared aggregate owner.
+% % The last flavor of ownership types is the owners-as-ombudsmen approach \cite{ownership-types-survey}, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
+% % This is achieved by allowing multiple objects to define a shared aggregate owner.
 
-% Extending the rules stated for owners-as-dominators, \emph{a} can also validly reference \emph{b} if \emph{a} is owned by aggregate owner \emph{b}.
-For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-ombudsmen must adhere to at least one of the following rules \cite{ownership-types-survey}.
-\begin{enumerate}
-  \item \emph{a} is the owner of \emph{b},
-  \item \emph{a} and \emph{b} are siblings, or
-  \item \emph{b} is outside of \emph{a}, or
-  \item \emph{a} is owned by aggregate owner \emph{b}
-\end{enumerate}
-
-
-\subsection{Advantages and disadvantages}
+% % Extending the rules stated for owners-as-dominators, \emph{a} can also validly reference \emph{b} if \emph{a} is owned by aggregate owner \emph{b}.
+% For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-ombudsmen must adhere to at least one of the following rules \cite{ownership-types-survey}.
+% \begin{enumerate}
+%   \item \emph{a} is the owner of \emph{b},
+%   \item \emph{a} and \emph{b} are siblings, or
+%   \item \emph{b} is outside of \emph{a}, or
+%   \item \emph{a} is owned by aggregate owner \emph{b}
+% \end{enumerate}
 
 
 % \paragraph{Ownership transfer}
 
-% TODO: possibly to do
+% TODO: I could easily link this back to rust
 
 
 % \subsection{Application of Ownership Types}
@@ -349,6 +355,9 @@ If anything was retrieved from other sources, it would be cited as such.
 
 % TODO: compare implementation of ownership types to other languages
 % It is not trivial to compare the implementation of the ownership concept of Rust with that of another programming language because Rust is kind of the only one doing so.
+
+% TODO: check if rust implements all rules from dominators or modifiers
+% TODO: question: can an object access owned children transitively? How is it in Rust (if someone asks me this question)?
 
 
 \subsection{Memory allocation system}
