@@ -150,7 +150,7 @@ In \ref{sec:rust-references}, we will explain in more detail how the Rust borrow
 The concept of ownership types provides one of the solutions aiming to eliminate many of the described memory-related bugs.
 Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling their effects \cite{ownership-types-survey}.
 Many different flavors of ownership types have been explored.
-In this paper, state of the art implementations of the ownership types concept, such as owners-as-dominators, owners-as-modifiers and owners-as-ombudsmen, will be explored further.
+In this paper, state of the art implementations of the ownership types concept, such as owners-as-dominators and owners-as-modifiers, will be explored further.
 These approaches differ in what kind of, if any, aliases they allow.
 
 
@@ -186,7 +186,7 @@ Objects that are in the same ownership context are called \emph{siblings} or \em
 
 One such flavor is the \emph{owners-as-dominators} model \cite{ownership-types-survey}, which is an implementation of the core encapsulation mechanism from the original Flexible Alias Protection concept \cite{flexible-alias-protection}.
 
-Yang Zhao and John Boyland \cite{permission-ownership-types} specify that, with owners-as-dominators, each regular object is owned by exactly one object and can be the owner of zero or more objects.
+Zhao and Boyland \cite{permission-ownership-types} specify that, with owners-as-dominators, each regular object is owned by exactly one object and can be the owner of zero or more objects.
 Objects can also be owned by a special global object called \emph{world}, which cannot be owned anymore.
 This \emph{world} object is the root of the acyclic ownership hierarchy tree that represents the ownership relation.
 In this tree structure, each object is inside its owner.
@@ -250,7 +250,9 @@ Internally, an object can still access its owner (and its owner's owner etc.).
 % TODO: why iterators can be implemented because of 3. outside rule
 % This rule may seem quite unintuitive, which is underlined by the fact that Dietl et al.'s version of owners-as-dominators leave this rule out.
 
-% Dietl et al. claim that Clarke's owners-as-dominators property is weakened "by allowing instances of inner classes to access the representation of the instance of the outer class they are associated with.
+% This rule may seem unintuitive, but it was added so that iterators can be implemented.
+
+% Dietl and Müller claim that Clarke's owners-as-dominators property is weakened "by allowing instances of inner classes to access the representation of the instance of the outer class they are associated with.
 % Dietl et al. claim that, "by allowing instances of inner classes to access the representation of the instance of the outer class they are associated with, [...] they can handle iterators, but not more general forms of sharing."
 % parametric ownership type systems describe ownership properties accurately and
 % guarantee a strong type invariant, ownership parametricity increases the complexity
@@ -262,7 +264,7 @@ Primarily, these three rules imply that any external reference to an object is o
 This is examplified in Figure \ref{fig:owners-as-dominators} where the object \emph{world} is trying to access the object \emph{engine}, which is not allowed because \emph{world} is neither a direct owner of, a sibling of or inside of \emph{engine}.
 Instead, \emph{world} could only reference \emph{engine} through the \emph{engine}'s owner \emph{car}.
 
-According to Dietl et al. \cite{lightweight-ownership}, the owners-as-dominators model restricts \emph{where} references are allowed to point to.
+According to Dietl and Müller \cite{lightweight-ownership}, the owners-as-dominators model restricts \emph{where} references are allowed to point to.
 % TODO: find reference/quote
 Any object that can validly be referenced may be mutated through that reference.
 
@@ -270,9 +272,7 @@ Its strictness can be seen as both an advantage and a disadvantage of the owners
 The advantage is that the model provides a simple, clear and strong guarantee that allows for reasoning about various properties of the code.
 However, it also makes programming more difficult by not allowing common idioms that involve aliasing. \cite{ownership-types-survey}
 
-% TODO: mention that all objects that can be referenced can be mutated
-
-
+% TODO: mention th
 % TODO: Add rust section on taking ownership of fields inside type
 % Struct Car {
 %   pub engine: Engine,
@@ -334,7 +334,7 @@ The only additional rule is that a reference can also be valid if it is a read-o
 
 \paragraph{Implications}
 
-Dietl et al. \cite{lightweight-ownership} suggest that the owners-as-modifiers approach allows references to point to objects in arbitrary contexts, but restricts \emph{how} references can be used.
+Dietl and Müller \cite{lightweight-ownership} suggest that the owners-as-modifiers approach allows references to point to objects in arbitrary contexts, but restricts \emph{how} references can be used.
 In particular, any object can be referenced by any given object.
 However, only an object that is the owner of, a sibling of or inside of another given object may receive a reference to that object that allows mutating the object.
 Figure \ref{fig:owners-as-modifiers} demonstrates that all other objects, such as \emph{world} or \emph{driver}, which may not be allowed to obtain a mutable reference to an object for the reasons above, can still receive read access to said object.
@@ -344,39 +344,14 @@ A disadvantage of the model may be the added complexity of read-only references.
 However, its advantage is that it expands the programming possibilities of the owners-as-dominators principle and fulfills the requirements needed for the verification of the functional correctness of object-oriented programs.
 
 
-% \subsection{Owners-as-ombudsmen}
-% \label{sec:owners-as-ombudsmen}
+\subsection{Limitations}
+% \subsection{From theory to Rust}
 
-% % TODO: is it obvious that this contains exact sentences from citation?
-% The paper that first introduced the idea of \emph{owners-as-ombudsmen} \cite{owners-as-ombudsmen} describes the concept as an extension of the owners-as-dominators model.
-% % TODO: this is the same as dominators
-% With owners-as-dominators, every path from the root to a given object must pass through that object's owner.
-% Thus, encapsulated objects must have a single \emph{bridge object} that mediates all external interaction with its internal objects.
-% The owners-as-ombudsmen approach, on the other hand, relaxes the single bridge object constraint and allows several bridge objects to collectively define an aggregate with a shared representation.
-% These bridge objects are called \emph{ombudsmen} to emphasize their benevolent nature.
+% These early ownership type models carry some flaws with them.
+% For example, in a system using the owners-as-dominators approach, one cannot programmatically create iterators.
 
-% % The last flavor of ownership types is the owners-as-ombudsmen approach \cite{ownership-types-survey}, which allows idioms that do not adhere to the strong topological structure of a tree structure to be implemented.
-% % This is achieved by allowing multiple objects to define a shared aggregate owner.
-
-% % Extending the rules stated for owners-as-dominators, \emph{a} can also validly reference \emph{b} if \emph{a} is owned by aggregate owner \emph{b}.
-% For \emph{a} to validly reference \emph{b} through reference \emph{r}, owners-as-ombudsmen must adhere to at least one of the following rules \cite{ownership-types-survey}.
-% \begin{enumerate}
-%   \item \emph{a} is the owner of \emph{b},
-%   \item \emph{a} and \emph{b} are siblings, or
-%   \item \emph{b} is outside of \emph{a}, or
-%   \item \emph{a} is owned by aggregate owner \emph{b}
-% \end{enumerate}
-
-
-% \paragraph{Ownership transfer}
-
-% TODO: I could easily link this back to rust
-
-
-% \subsection{Application of Ownership Types}
 
 % TODO: chapter 6 of ownership-types-survey
-
 
 \section{Implementation in Rust}
 \label{sec:implementation-in-rust}
@@ -386,24 +361,32 @@ However, its advantage is that it expands the programming possibilities of the o
 The modern programming language Rust uses an extended version of the ownership type model \emph{owners-as-modifiers}.
 As will be discussed in this chapter, Rust allows both read-only and mutable references in a controlled manner.
 
-All of the information gathered in this chapter is derived from the "Understanding Ownership" section from the Rust Book \cite{rust-book}.
+Most of the Rust-related information gathered in this chapter is derived from the "Understanding Ownership" section from the Rust Book \cite{rust-book}.
 If anything was retrieved from other sources, it would be cited as such.
 
-\subsection{How Rust implements ownership types}
-\label{sec:rust-ownership-types}
+\subsection{Ownership as use-once variables}
+\label{sec:use-once-variables}
+
+% TODO: fix this section by reformatting the copied text and adding quotes from the references
+
+% Rust's notion of ownership rests atop a long lineage of work, harkening back to the early days of linear logic [Girard 1987], and especially efforts by Wadler [1991] and Baker [1992] to develop systems for functional programming without garbage collection.
+% However, as noted by Wakeling and Runciman [1991], Wadler’s effort relied greatly on pervasive copying.
+% This reliance on copying and the associated performance penalty would not suffice for real world systems programming efforts, and thus, Rust’s ownership model is best understood as instead building off of Baker’s work on Linear Lisp where linearity enabled efficient reuse of objects in memory [Baker 1992, 1994a,b,1995].
+% The resemblance is especially strong between Rust without borrowing and Baker’s ’use-once’ variables [Baker 1995].
+% TODO: explain use-once concept in more detail with reference to Baker's paper
+
+
+% \subsection{How Rust implements ownership types}
+% \label{sec:rust-ownership-types}
 
 % The modern programming language Rust uses an extended version of the ownership type model \emph{owners-as-modifiers}.
 % In addition to read-only references, which are allowed in owners-as-modifiers, Rust also supports mutable references in a controlled manner.
 
-% TODO: discuss why rust allows mutable: more useful, but why?
-
-
-% TODO: compare implementation of ownership types to other languages
-% It is not trivial to compare the implementation of the ownership concept of Rust with that of another programming language because Rust is kind of the only one doing so.
 
 % TODO: check if rust implements all rules from dominators or modifiers
 % TODO: question: can an object access owned children transitively? How is it in Rust (if someone asks me this question)?
 
+% This chapter will focus on how ownership types are used in Rust.
 
 \subsection{Memory allocation system}
 \label{sec:memory-allocation}
@@ -442,8 +425,6 @@ Rust automatically calls the function \emph{drop} when a value goes out of scope
 The following describes how the concept of ownership is implemented in Rust.
 
 % TODO: wording of value and types used interchangedly here, maybe incorrect
-% TODO: maybe add defintion of ownership transfer if not obvious
-% TODO: go into detail on how heap types are stored on heap. some constant fields are actually stored on stack (string: pointer, size, capacity)
 \subsection{Transferring ownership}
 \label{sec:rust-transferring-ownership}
 
@@ -663,13 +644,12 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 
 
 
-% \section{Practical examples using Rust}
-% - show common Rust ownership errors
-% - Protection against memory vulnerabilitie examples
-% - reference: \cite{rust-by-example}
+% \section{Other ownership implementations}
 
+% TODO: compare implementation of ownership types to other languages
+% It is not trivial to compare the implementation of the ownership concept of Rust with that of another programming language because Rust is kind of the only one doing so.
+% CPP is a good candidate
 
-% \section{Alternatives}
 % - comparison to alternative type systems without ownership (C/C++: none at all, Java: garbage collection)
 % - choose non-ownership programming language e.g. C++20
 % - compare code examples
@@ -680,9 +660,10 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 \section{Summary \& Outlook}
 \label{sec:summary}
 
-In summary, programming languages based on ownership types can eliminate many memory-related issues by enforcing strict rules on the existence and behavior of references to values.
-Furthermore, an enhanced version of the ownership types concept is integral to the Rust programming language.
-Compared to more commonly used low-level programming languages like C, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time, allowing for strong runtime performance and omitting the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform.
+In summary, programming languages based on ownership types can eliminate many aliasing-related issues by enforcing strict rules on the existence and behavior of references to values.
+The owners-as-dominators and owners-as-modifiers models enforce different levels of strictness on both where and how references may be used.
+Furthermore, an enhanced version of the ownership concept is integral to the Rust programming language.
+Compared to more commonly used low-level programming languages like C, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time, allowing for safe runtime performance and omitting the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform.
 Even though the Rust compiler forces developers to think more intentionally about how they deal with memory through ownership, they will receive helpful compile-time error messages instead of crashes or undefined behavior at runtime if they do something wrong.
 
 It will be interesting to see how Rust's development will continue in the future.
