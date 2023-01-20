@@ -396,7 +396,7 @@ Since heap-based values could be arbitrarily large at runtime, copying the whole
 There are several different scenarios in which ownership is transferred.
 
 In the simplest scenario, ownership is transferred from the variable \emph{a} to the variable \emph{b} when \emph{b} is assigned to \emph{a}.
-\footnote{In some code snippets, the main function is omitted for the sake of simplicity}
+\footnote{For the sake of simplicity, the main function is omitted in some code snippets}
 
 \begin{lstlisting}
 let a = HeapBasedType::default();
@@ -465,11 +465,12 @@ Therefore, the program compiles and "x: hello world, y: hello world" is printed 
 
 In their work on the owners-as-modifiers property, Clarke et al. \cite{ownership-types-survey} emphasize that rather than simply protecting the fields of an object from external access, ownership types also protect the objects stored in the fields, thereby enabling an object to claim (exclusive) ownership of and access to other objects.
 This notion has been implemented in the Rust ownership system as well.
-The following example illustrates how not only whole objects, but also fields (called \emph{structs} in Rust terminology), can be moved into other objects.
+The following example illustrates that not only whole objects, but also the fields of structures, can be moved into other objects.
 
 \begin{lstlisting}
 struct Car {
   engine: Engine,
+  wheels: Wheels,
 }
 fn main() {
   let car = Car::default();
@@ -478,7 +479,10 @@ fn main() {
 }
 \end{lstlisting}
 
-% TODO
+In line 7, we perform a so-called \emph{partial move}, which means that parts of the variable \emph{car} are moved (into \emph{engine}).
+The untouched parts, such as \emph{wheels} in our example, will still be accessible afterwards.
+After we move the \emph{engine} field out of the \emph{car} structure, however, the parent variable \emph{car} cannot be used as a whole again.
+Therefore, the compiler will complain that we want to call the \emph{drive} method on the partially moved value \emph{car}.
 
 
 \subsection{The Clone trait}
