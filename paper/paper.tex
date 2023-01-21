@@ -15,7 +15,7 @@
   % language=Rust,
   aboveskip=3mm,
   belowskip=3mm,
-  showstringspaces=false,
+  % showstringspaces=false,
   columns=flexible,
   basicstyle={\small\ttfamily},
   numbers=left,
@@ -26,7 +26,7 @@
   % commentstyle=\color{dkgreen},
   % stringstyle=\color{mauve},
   breaklines=true,
-  breakatwhitespace=true,
+  % breakatwhitespace=true,
   tabsize=2
 }
 \pagenumbering{gobble}
@@ -43,6 +43,8 @@
 \email{fritz.rehde@tum.de}
 
 
+% TODO: brief overview of sections somewhere (maybe end of introduction)
+
 \begin{abstract}
 % Abstract: Brief summary of area, problem, approach, key result
 
@@ -53,8 +55,6 @@ The premise of ownership types is that not only the fields of an object are prot
 This is done by allowing objects to take ownership of other objects.
 
 This paper depicts the different kinds of ownership types and explains how the modern programming language Rust uses ownership types.
-
-% TODO: brief overview of sections somewhere (maybe end of introduction)
 
 \end{abstract}
 
@@ -96,7 +96,7 @@ First, we will explore how a memory safety problem is created in the following C
 
 \begin{lstlisting}
 std::vector<int> v { 10, 11 };
-int *vptr = &v[1]; // points *into* v
+int *vptr = &v[1]; // points into v
 v.push_back(12);
 std::cout << *vptr; // bug (use-after-free)
 \end{lstlisting}
@@ -126,7 +126,7 @@ println!("{}", *vptr); // compiler error
 
 Syntactically, the C++ and Rust versions are very similar.
 Notably, the \emph{push} method in line 3 has the following signature: \verb|pub fn push(&mut self, value: T)| \cite{rust-vector-documentation}.
-While the C++ version will compile the program successfully, causing a run-time security vulnerability, the Rust compiler shows an error: "Cannot borrow \emph{v} as mutable more than once at a time."
+While the C++ version will compile successfully, causing a run-time security vulnerability, the Rust compiler shows an error: "Cannot borrow \emph{v} as mutable more than once at a time."
 For now, it suffices to say that the Rust compiler disallows both lines 2 and 3 to create mutable references to \emph{v} if one of the mutable references is used later (like \emph{vptr} is in line 4).
 In \ref{sec:rust-references}, we will explain in more detail how the Rust borrow-checker is able to detect this problem using Rust's ownership rules.
 
@@ -605,16 +605,48 @@ The scope of the mutable reference \emph{r3} only starts in line 7.
 Therefore, the scopes of the mutable reference and the two immutable references do not overlap, and the program compiles.
 
 
-% \paragraph{Lifetimes}
+\subsection{Lifetimes}
+
+% The programmer must only annotate lifetimes explicitly when there is ambiguity in the relationship between the lifetimes of multiple references.
+
+One detail we did not discuss in \ref{sec:rust-references} is that every reference in Rust has a \emph{lifetime} \cite{rust-book}.
+As previously explained, immutable and mutable references borrow ownership and thus grant temporary access to a data structure \cite{understanding-evolving-rust}.
+% Lifetimes answer the question: just how long is temporary?
+A lifetime is a construct that the compiler, or more specifically, its \emph{borrow checker}, uses to ensure that all borrows are valid \cite{rust-by-example}.
+The full form of a reference type including lifetime annotations is \verb|&'a mut T| or \verb|&'a T|, where \verb|'a| is the lifetime of the reference.
+Our examples have not included explicit lifetime annotations until now, because the compiler uses some conventions to elide them.
+To ensure references get used correctly, the compiler enforces the following two constraints \cite{understanding-evolving-rust}:
+\begin{enumerate}
+  \item The reference can only be used while its lifetime is ongoing, and
+  \item the original referent is not used at all (for mutable references) or does not get mutated (for immutable references) until the lifetime of the newly created reference has expired.
+\end{enumerate}
+
+Lifetimes play an important role in explaining how the example from \ref{sec:memory-safety} got rejected by the compiler.
+
+% TODO: format so spaces align properly
+\begin{lstlisting}
+let mut v = vec![10, 11];
+let vptr = &mut v[1];  // lifetime 'a starts
+Vec::push(&mut v, 12); // lifetime 'b
+println!("{}", *vptr); // lifetime 'a ends
+\end{lstlisting}
+
+The lifetime of the mutable reference \emph{vptr} ranges from its creation in line 2 to its last use in line 4.
+Since \emph{vptr} is a mutable reference to \emph{v}, according to the second rule, \emph{v} may not be used again during \emph{vptr}'s lifetime.
+However, this condition is violated in line 3, when another reference to \emph{v} is created.
+Therefore, the program does not compile.
+
+By reordering lines 2 and 3, the lifetimes of the two mutable references will no longer overlap, allowing for successful compilation of the program.
+\begin{lstlisting}
+let mut v = vec![10, 11];
+Vec::push(&mut v, 12); // lifetime 'b
+let vptr = &mut v[1];  // lifetime 'a starts
+println!("{}", *vptr); // lifetime 'a ends
+\end{lstlisting}
 
 % TODO: explain how dangling references are prevented
 
-% lifetime elision
-
 % explain this example:
-% A quick definition of ownership: you cannot have mutability and alias at the same time.
-% My own example:
-
 % \begin{lstlisting}
 % fn dangle() -> &String {
 %   let s = String::from("hello world");
@@ -674,7 +706,7 @@ In contrast, a \verb|std::move| in C++ has no formal effect on the lifetime on t
 This means that the object \emph{s} can still be used after being moved, even though there is no guarantee by the compiler that it is still valid, because there exists no consistent specification on how move constructors or assignment operators should be implemented.
 We can conclude that Rust, in contrast to C++, adds safety to its move sematics through destructive moves enforced by the compiler \cite{cpp-rust-ownership}.
 
-We have only focused on the move semantics in the two languages, but there are many more ownership-related comparisons (smart pointers, shared ownership, immutability etc.) between the two languages that are out of the scope of this paper.
+We have only focused on the move semantics in the two languages, but there are many more ownership-related comparisons (smart pointers, shared ownership, mutable references etc.) between the two languages that are out of the scope of this paper.
 
 
 \section{Summary \& Outlook}
