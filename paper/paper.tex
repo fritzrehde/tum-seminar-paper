@@ -54,6 +54,8 @@ This is done by allowing objects to take ownership of other objects.
 
 This paper depicts the different kinds of ownership types and explains how the modern programming language Rust uses ownership types.
 
+% TODO: brief overview of sections somewhere (maybe end of introduction)
+
 \end{abstract}
 
 
@@ -635,24 +637,44 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 % The API of the stdlib is safe, the implementation isn't.
 
 
+\subsection{Other ownership implementations}
 
-% \section{Other ownership implementations}
+Given the breadth of research on ownership types explored in previous sections, it should not come as a surprise to learn that Rust is not the only programming language to use ownership types.
+In order to discuss and evaluate the advantages and disadvantages of Rust's ownership system, we will briefly compare its use of ownership to that of C++ using the work of Schroeder \cite{cpp-rust-ownership}.
 
-% TODO: compare implementation of ownership types to other languages
-% It is not trivial to compare the implementation of the ownership concept of Rust with that of another programming language because Rust is kind of the only one doing so.
-% CPP is a good candidate
+A first difference is that Rust included moving into the language's design early on, whereas C++ gained move semantics relatively late in its life.
 
-% cpp biggest flaw: no compile time checks at all
+C++ supports several different types of references based on "value categories" \cite{cpp-value-categories}.
+L-value references, denoted with a single ampersand, refer mainly to references to named values, while R-value references, denoted with two ampersands, refer mainly to temporary results of expression evaluations\footnote{The provided definitions of L-values and R-values are over-simplifications but suffice for the purpose of this paper.}.
+Moving in C++ is closely related to constructors and assignment operators, which are overloaded for each specific class to accept various types of references \cite{cpp-rust-ownership}.
+When invoking one of these special member functions, the overload resolution process will select the matching overload based on the value category of the reference.
+For L-values, the matching copy constructor or assignment operator will be called, while for R-values, the matching move constructor or assignment operator will be called.
+The following C++ example illustrates some significant differences between move semantics in C++ and Rust.
 
-% cpp comparison:
-% http://nercury.github.io/c++/intro/2017/01/22/cpp-for-rust-devs.html
-% https://www.tangramvision.com/blog/c-rust-interior-mutability-moving-and-ownership
+\begin{lstlisting}
+S s{};
+S s_copied{s}; // copy constructor
+S s_moved{std::move(s)}; // move constructor
+// problem: 's' can still be used
+\end{lstlisting}
 
-% - comparison to alternative type systems without ownership (C/C++: none at all, Java: garbage collection)
-% - choose non-ownership programming language e.g. C++20
-% - compare code examples
-% - compile time differences between Rust and non-ownership lang
-% - runtime differences between Rust and non-ownership lang
+We can construct a similar piece of code in Rust.
+
+\begin{lstlisting}
+let s = S::default();
+let s_copied = s.clone();
+let s_moved = s; // 's' is moved
+// compiler prevents use of 's'
+\end{lstlisting}
+
+Instead of using type-specific constructors and assignment operators, in Rust, we would \emph{clone} a value to copy it (stack-based primitives are copied automatically without an explicit clone) or directly move it without additional syntax.
+In C++, we must use \verb|std::move| to move a named value, which simply casts a reference to an R-value reference, to indicate to the compiler that the move constructor for the specific type should be called \cite{cpp-rust-ownership}.
+After the move of \emph{s} into \emph{s\_moved} in Rust, the compiler will not allow another use of the moved-from object \emph{s} as its lifetime has ended.
+In contrast, a \verb|std::move| in C++ has no formal effect on the lifetime on the moved-from object \emph{s}.
+This means that the object \emph{s} can still be used after being moved, even though there is no guarantee by the compiler that it is still valid, because there exists no consistent specification on how move constructors or assignment operators should be implemented.
+We can conclude that Rust, in contrast to C++, adds safety to its move sematics through destructive moves enforced by the compiler \cite{cpp-rust-ownership}.
+
+We have only focused on the move semantics in the two languages, but there are many more ownership-related comparisons (smart pointers, shared ownership, immutability etc.) between the two languages that are out of the scope of this paper.
 
 
 \section{Summary \& Outlook}
