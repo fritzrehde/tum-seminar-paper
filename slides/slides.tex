@@ -2,6 +2,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage{listings}
+\usepackage{listings-rust}
 \usepackage{tikz}
 \usetikzlibrary{fit,positioning}
 % \usepackage[style=alphabetic,giveninits=true,terseinits=true]{biblatex}
@@ -9,30 +10,35 @@
 \definecolor{tumblue}{RGB}{0,101,189}
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
+% \lstset{
+%   frame=tb,
+%   basicstyle=\footnotesize\ttfamily,
+%   columns=fullflexible,
+%   numbers=left,
+%   numbersep=5pt,
+%   xleftmargin=\parindent,
+%   keywordstyle=\bfseries\color{blue},
+%   commentstyle=\color{dkgreen},
+%   stringstyle=\color{mauve},
+% }
+
 \lstset{
+  frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
   basicstyle=\footnotesize\ttfamily,
-  columns=fullflexible,
+  % basicstyle={\small\ttfamily},
+  numbers=left,
+  numbersep=5pt,
+  % xleftmargin=\parindent,
+  numberstyle=\color{gray},
   keywordstyle=\bfseries\color{blue},
   commentstyle=\color{dkgreen},
   stringstyle=\color{mauve},
-}
-
-\lstset{frame=tb,
-  % language=Rust,
-  aboveskip=3mm,
-  belowskip=3mm,
-  % showstringspaces=false,
-  columns=flexible,
-  basicstyle={\small\ttfamily},
-  numbers=left,
-  numbersep=5pt,
-  xleftmargin=\parindent,
-  numberstyle=\color{gray},
-  % keywordstyle=\color{blue},
-  % commentstyle=\color{dkgreen},
-  % stringstyle=\color{mauve},
   breaklines=true,
-  % breakatwhitespace=true,
+  breakatwhitespace=false,
   tabsize=2
 }
 \definecolor{cgreen}{RGB}{60,201,65}
@@ -78,17 +84,17 @@
 \begin{frame}[fragile]{Memory safety}
 
 C++
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
 std::vector<int> v { 10, 11 };
-int *vptr = &v[1]; // points into v
+int *vptr = &v[1];  // points into v
 v.push_back(12);
 std::cout << *vptr; // bug (use-after-free)
 \end{lstlisting}
 
 Rust
-\begin{lstlisting}
+\begin{lstlisting}[language=Rust]
 let mut v = vec![10, 11];
-let vptr = &mut v[1]; // points *into* v
+let vptr = &mut v[1];  // points *into* v
 v.push(12);
 println!("{}", *vptr); // compiler error
 \end{lstlisting}
