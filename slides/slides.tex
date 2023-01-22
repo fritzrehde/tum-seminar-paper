@@ -274,14 +274,16 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
 
 \begin{frame}{From theory to implementation}
 \begin{itemize}
-  \item Rust's ownership system: extended version of owners-as-modifiers
+  \item Rust's ownership system: extends owners-as-modifiers
   \begin{itemize}
-    \item immutable (read-only) and mutable references allowed (not in owners-as-dominators)
     \item no garbage collection (overhead)
+    \item immutable (read-only) and mutable references % (not in owners-as-dominators)
+    \item rules for compiler to check validity of references
     \item extensions:
     \begin{itemize}
       \item transferring ownership from one object to another
       \item object immutability by default
+      \item Resource Acquisition Is Initialization (similar to C++)
     \end{itemize}
   \end{itemize}
   % \item aliasing concept essential to ownership types
@@ -290,6 +292,12 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
   %   \item pointers: exist in Rust, but their use is not advised
   %   \item \emph{references}
   % \end{itemize}
+  \item ownership rules in Rust:
+  \begin{enumerate}
+    \item Each value in Rust has an owner.
+    \item There can only be one owner at a time.
+    \item When the owner goes out of scope, the value will be \emph{dropped} (associated memory is freed).
+  \end{enumerate}
 \end{itemize}
 \end{frame}
 
@@ -297,9 +305,47 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
 % \begin{frame}{Memory allocation system}
 % \end{frame}
 
+% TODO: variable scope
 
-\begin{frame}{Transferring ownership}
-  Big difference to theoretical ownership types
+
+\begin{frame}[fragile]{Transferring ownership}
+Heap-based values: 
+\begin{itemize}
+  \item unknown size at compile time
+  \item copying the value at runtime could be costly
+  \item values are "moved" (between variables) by default
+
+  \begin{lstlisting}[language=Rust]
+  fn main() {
+    let a = String::from("hello world");
+    let b = a; // ownership transfer: a is moved into b
+    let c = take_ownership(b); // b is moved into function
+    println!("{}", b); // compiler error: b no longer valid
+  }
+  fn take_ownership(s: String) -> String {
+    // do something with s
+    String::from("new hello world")
+  }
+  \end{lstlisting}
+  \item create deep copies with explicit \verb|clone()| call
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Transferring ownership}
+Stack-based primitives: 
+\begin{itemize}
+  \item small, known size at compile time
+  \item examples: i32, u8, f64, char, bool etc.
+  \item values are copied by default
+
+  \begin{lstlisting}[language=Rust]
+  let x: u32 = 42;
+  let y: u32 = x; // x is copied instead of moved
+  println!("x: {}, y: {}", x, y); // x and y valid
+  \end{lstlisting}
+  \item stack-based values implement \verb|Copy| trait (exclusive to \verb|Drop| trait)
+\end{itemize}
 \end{frame}
 
 
@@ -307,9 +353,38 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
 \end{frame}
 
 
+\begin{frame}{Lifetimes}
+\end{frame}
+
+
+\begin{frame}[fragile]{References and borrowing: examples}
+\begin{itemize}
+  \begin{lstlisting}[language=Rust]
+  let a;
+  {
+    let b: u32 = 42;
+    a = &b;
+  }
+  println!("{}", *a) // dereference a
+  \end{lstlisting}
+
+  \item Will it compile? \pause No.
+  % TODO: lifetime explanation
+  \item Why not? \pause Borrowed value 'b' does not live long enough/is used after being dropped.
+  \item Refactored version that compiles:\pause
+
+  \begin{lstlisting}[language=Rust]
+  let a;
+  let b: u32 = 42;
+  a = &b;
+  println!("{}", *a) // dereference a
+  \end{lstlisting}
+\end{itemize}
+\end{frame}
+
+
 \section{Evaluation: another implementation}
 
-% \subsection{Another ownership implementation}
 
 
 \section{Conclusions and outlook}
