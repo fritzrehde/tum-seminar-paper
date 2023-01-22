@@ -84,7 +84,7 @@ The tech giants Google \cite{google-memory-safety} and Microsoft \cite{microsoft
 The importance of memory safety is further underlined by the fact that the National Security Agency of the United States of America has published a Cybersecurity Information Sheet \cite{nsa-memory-safety} on the topic, the contents of which are described in the following section.
 
 There are a variety of potential occurrences of memory management issues.
-Examples include \emph{buffer overflows}, where data is accessed outside the bounds of an array, \emph{memory leaks}, where the programmer forgets to free memory that has been allocated, causing the program to, eventually, run out of memory, \emph{Use-After-Free}, where memory is accessed after it has been freed,\emph{Double-Free}, where memory is freed again after it had already been freed before, and the use of uninitialized memory.
+Examples include \emph{buffer overflows}, where data is accessed outside the bounds of an array, \emph{memory leaks}, where the programmer forgets to free memory that has been allocated, causing the program to, eventually, run out of memory, \emph{Use-After-Free}, where memory is accessed after it has been freed, \emph{Double-Free}, where memory is freed again after it had already been freed before, and the use of uninitialized memory.
 These issues can not only enable potential malicious exploits, they can also result in incorrect program results, the decrease of a program's performance or seemingly random program crashes.
 
 Commonly used programming languages, such as C and C++, provide a lot of freedom and flexibility in memory management, but this comes at the cost of heavily relying on the programmer to perform the needed checks on memory references.
@@ -123,7 +123,7 @@ Consider the following Rust translation of our C++ example:
 
 \begin{lstlisting}[language=Rust]
 let mut v = vec![10, 11];
-let vptr = &mut v[1]; // points *into* v
+let vptr = &mut v[1]; // points into v
 v.push(12);
 println!("{}", *vptr); // compiler error
 \end{lstlisting}
@@ -132,7 +132,7 @@ Syntactically, the C++ and Rust versions are very similar.
 Notably, the \emph{push} method in line 3 has the following signature: \verb|pub fn push(&mut self, value: T)| \cite{rust-vector-documentation}.
 While the C++ version will compile successfully, causing a run-time security vulnerability, the Rust compiler shows an error: "Cannot borrow \emph{v} as mutable more than once at a time."
 For now, it suffices to say that the Rust compiler disallows both lines 2 and 3 to create mutable references to \emph{v} if one of the mutable references is used later (like \emph{vptr} is in line 4).
-In \ref{sec:rust-references}, we will explain in more detail how the Rust borrow-checker is able to detect this problem using Rust's ownership rules.
+In \ref{sec:rust-references} and \ref{sec:rust-lifetimes}, we will explain in more detail how the Rust borrow-checker is able to detect this problem using Rust's ownership rules.
 
 
 \subsection{State of the art}
@@ -610,6 +610,7 @@ Therefore, the scopes of the mutable reference and the two immutable references 
 
 
 \subsection{Lifetimes}
+\label{sec:rust-lifetimes}
 
 % The programmer must only annotate lifetimes explicitly when there is ambiguity in the relationship between the lifetimes of multiple references.
 
@@ -674,6 +675,7 @@ println!("{}", *vptr); // lifetime 'a ends
 
 
 \subsection{Other ownership implementations}
+\label{sec:other-ownership-implementations}
 
 Given the breadth of research on ownership types explored in previous sections, it should not come as a surprise to learn that Rust is not the only programming language to use ownership types.
 In order to discuss and evaluate the advantages and disadvantages of Rust's ownership system, we will briefly compare its use of ownership to that of C++ using the work of Schroeder \cite{cpp-rust-ownership}.

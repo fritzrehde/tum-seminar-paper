@@ -81,34 +81,101 @@
 
 \section{Motivation}
 
-\begin{frame}[fragile]{Memory safety}
+\begin{frame}{Aliasing}
+\begin{itemize}
+  \item object aliasing = accessing the same memory through different symbolic names
+  % TODO: example
+  \item unintentional aliases $\rightarrow$ bugs, hard to detect
+  \item ownership types goal: restrict object aliasing (through rules) $\rightarrow$ improve memory safety
+\end{itemize}
+\end{frame}
 
+
+\begin{frame}{Memory safety}
+\begin{itemize}
+  \item ownership types goal: improve memory safety
+  \item Google and Microsoft: 70 percent of vulnerabilities due to memory safety issues
+  \item National Security Agency (USA) recommends memory-safe languages (instead of C/C++)
+  \item examples: buffer overflows, memory leaks, double-free, use-after-free
+  \item result: malicious exploits, incorrect program results, "random" crashes
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Memory safety: example}
 C++
 \begin{lstlisting}[language=C++]
 std::vector<int> v { 10, 11 };
 int *vptr = &v[1];  // points into v
-v.push_back(12);
+v.push_back(12);    // v buffer reallocated => vptr dangling
 std::cout << *vptr; // bug (use-after-free)
 \end{lstlisting}
 
 Rust
 \begin{lstlisting}[language=Rust]
 let mut v = vec![10, 11];
-let vptr = &mut v[1];  // points *into* v
-v.push(12);
+let vptr = &mut v[1];  // 1. mutable reference
+Vec::push(&mut v, 12); // 2. mutable reference
 println!("{}", *vptr); // compiler error
 \end{lstlisting}
-
 \end{frame}
 
-\section{Background}
 
-\subsection{Ownership types in theory}
+\section{Ownership types in theory}
 
-\begin{frame}{Domain specific terms}
+\begin{frame}{Ownership types}
+\begin{itemize}
+  \item object-oriented programs:
+  \begin{itemize}
+    \item objects can reference any other object
+    \item objects can read and modify other objects' fields
+    \item makes it difficult to understand, to maintain, and to reason about
+  \end{itemize}
+  \item using ownership types:
+  \begin{itemize}
+    \item limit which objects can be referenced
+    \item can specify whether the referenced objects may be mutated or just read from
+  \end{itemize}
+\end{itemize}
 \end{frame}
+
+
+\begin{frame}{Ownership types: core concepts}
+\begin{itemize}
+  % TODO: different highlighting than italics
+  \item objects can be \emph{owners} of other objects
+  \item \emph{inside} relation: \emph{a} is \emph{inside} \emph{b} if they are the same object or \emph{a} is transitively owned by \emph{b}
+  \item \emph{outside} relation: converse of \emph{inside} relation
+  \item \emph{ownership context}: set of all objects that an object owns
+  \item \emph{siblings}: objects in the same ownership context
+  \item special \emph{world} object is root of the ownership hierarchy tree
+\end{itemize}
+
+% TODO: make spacing between vertical objects smaller
+\begin{figure}[fragile]
+  \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
+    \node[object] (World) {world};
+    \node[object] (Car) [below=of World] {car};
+    \node[object] (Driver) [right=of Car] {driver};
+    \node[object] (Engine) [below=of Car] {engine};
+
+    \draw[->,thick] (World) to (Car);
+    \draw[->,thick] (World) to (Driver);
+    \draw[->,thick] (Car) to (Engine);
+  \end{tikzpicture}
+
+  \caption{solid lines indicate "owns"}
+\end{figure}
+\end{frame}
+
 
 \begin{frame}{Owners-as-dominators}
+For \emph{a} to validly reference \emph{b}:
+\begin{enumerate}
+  \item \emph{a} is the owner of \emph{b},
+  \item \emph{a} and \emph{b} are siblings, or
+  \item \emph{b} is outside of \emph{a}.
+\end{enumerate}
 
 \begin{figure}[fragile]
   \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
@@ -128,12 +195,46 @@ println!("{}", *vptr); // compiler error
     \draw[->,thick,dashed,red] (Driver) edge[bend left] node[right] {invalid} (Engine);
   \end{tikzpicture}
 
-  \caption{Owners-as-dominators: Solid lines indicate "owns" and dotted lines indicate "references".}
+  \caption{solid lines indicate "owns" and dotted lines indicate "references"}
 \end{figure}
-
 \end{frame}
 
+
+\begin{frame}{Owners-as-dominators: implications}
+\begin{itemize}
+  \item any external reference to an object must go through its owner
+  \item objects are only protected from external access, not internal access
+  \item owners-as-dominators: owner is dominator for all of its owned objects
+  \item doesn't allow common idioms that involve aliasing
+  \item model restricts \emph{where} references can point, not \emph{how} references are used
+\end{itemize}
+
+\begin{figure}[fragile]
+  \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
+    \node[object] (World) {world};
+    \node[object] (Car) [below=of World] {car};
+    \node[object] (Driver) [right=of Car,xshift=1.5cm] {driver};
+    \node[object] (Engine) [below=of Car] {engine};
+
+    \draw[->,thick] (World) to (Car);
+    \draw[->,thick] (World) to (Driver);
+    \draw[->,thick] (Car) to (Engine);
+
+    \draw[->,thick,dashed,cgreen] (Car) edge[bend left] node[right] {owner} (Engine);
+    \draw[->,thick,dashed,cgreen] (Engine) edge[bend left] node[left] {inside} (Car);
+    \draw[->,thick,dashed,cgreen] (Car) edge node[above] {sibling} (Driver);
+    \draw[->,thick,dashed,red] (World) edge[bend right=90] node[left] {invalid} (Engine);
+    \draw[->,thick,dashed,red] (Driver) edge[bend left] node[right] {invalid} (Engine);
+  \end{tikzpicture}
+\end{figure}
+\end{frame}
+
+
 \begin{frame}{Owners-as-modifiers}
+Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} through \emph{r}, if:
+\begin{enumerate}
+  \item \emph{r} is a read-only reference and only pure methods (that don't modify existing objects) can be called on it.
+\end{enumerate}
 
 \begin{figure}
   \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
@@ -152,30 +253,63 @@ println!("{}", *vptr); // compiler error
     \draw[->,thick,dashed,orange] (World) edge[bend right=90] node[left] {read only} (Engine);
     \draw[->,thick,dashed,orange] (Driver) edge[bend left] node[right] {read only} (Engine);
   \end{tikzpicture}
-
-  \caption{Owners-as-modifiers: Solid lines indicate "owns" and dotted lines indicate "references".}
 \end{figure}
-
 \end{frame}
 
 
-\section{Concept}
+\begin{frame}{Owners-as-modifiers: implications}
+\begin{itemize}
+  % \item any external reference to an object must go through its owner
+  % \item objects are only protected from external access, not internal access
+  \item owners-as-modifiers: only the owners can modify objects
+  % \item doesn't allow common idioms that involve aliasing
+  % \item model restricts \emph{where} references can point, not \emph{how} references are used
+\end{itemize}
 
-\subsection{Ownership in Rust}
+\begin{figure}
+  \begin{tikzpicture}[object/.style={rectangle, draw, very thick, minimum size=20}]
+    \node[object] (World) {world};
+    \node[object] (Car) [below=of World] {car};
+    \node[object] (Driver) [right=of Car,xshift=1.5cm] {driver};
+    \node[object] (Engine) [below=of Car] {engine};
+
+    \draw[->,thick] (World) to (Car);
+    \draw[->,thick] (World) to (Driver);
+    \draw[->,thick] (Car) to (Engine);
+
+    \draw[->,thick,dashed,cgreen] (Car) edge[bend left] node[right] {owner} (Engine);
+    \draw[->,thick,dashed,cgreen] (Engine) edge[bend left] node[left] {inside} (Car);
+    \draw[->,thick,dashed,cgreen] (Car) edge node[above] {sibling} (Driver);
+    \draw[->,thick,dashed,orange] (World) edge[bend right=90] node[left] {read only} (Engine);
+    \draw[->,thick,dashed,orange] (Driver) edge[bend left] node[right] {read only} (Engine);
+  \end{tikzpicture}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{From theory to Rust}
+\begin{itemize}
+\end{itemize}
+\end{frame}
+
+
+\section{Ownership in Rust}
 
 \begin{frame}{Memory allocation system}
-
 \end{frame}
+
 
 \begin{frame}{Transferring ownership}
 \end{frame}
 
+
 \begin{frame}{References and borrowing}
 \end{frame}
 
-\section{Evaluation}
 
-\subsection{Another ownership implementation}
+\section{Evaluation: another implementation}
+
+% \subsection{Another ownership implementation}
 
 
 \section{Conclusions and outlook}
