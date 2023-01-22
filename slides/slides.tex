@@ -3,25 +3,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage{listings}
 \usepackage{listings-rust}
-\usepackage{tikz}
-\usetikzlibrary{fit,positioning}
-% \usepackage[style=alphabetic,giveninits=true,terseinits=true]{biblatex}
-
-\definecolor{tumblue}{RGB}{0,101,189}
-\definecolor{dkgreen}{rgb}{0,0.6,0}
-\definecolor{mauve}{rgb}{0.58,0,0.82}
-% \lstset{
-%   frame=tb,
-%   basicstyle=\footnotesize\ttfamily,
-%   columns=fullflexible,
-%   numbers=left,
-%   numbersep=5pt,
-%   xleftmargin=\parindent,
-%   keywordstyle=\bfseries\color{blue},
-%   commentstyle=\color{dkgreen},
-%   stringstyle=\color{mauve},
-% }
-
 \lstset{
   frame=tb,
   aboveskip=3mm,
@@ -41,11 +22,12 @@
   breakatwhitespace=false,
   tabsize=2
 }
+\usepackage{tikz}
+\usetikzlibrary{fit,positioning}
+\definecolor{tumblue}{RGB}{0,101,189}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
 \definecolor{cgreen}{RGB}{60,201,65}
-
-% \DeclareFieldFormat{url}{\href{#1}{\resizebox{!}{2ex}{\lower3pt\hbox{\pgfuseimage{beamericononline}}}}}
-% \addbibresource{slides.bib}
-
 \setbeamerfont{footnote}{size=\tiny}
 \renewcommand\footnoterule{}
 \usecolortheme{orchid}
@@ -69,7 +51,6 @@
 \institute{School of Computation, Information, and Technology\\Technical University of Munich}
 \date{26.01.2023}
 
-% \useoutertheme[subsection=false]{miniframes}
 
 \begin{document}
 
@@ -81,19 +62,9 @@
 
 \section{Motivation}
 
-\begin{frame}{Aliasing}
-\begin{itemize}
-  \item object aliasing = accessing the same memory through different symbolic names
-  % TODO: example
-  \item unintentional aliases $\rightarrow$ bugs, hard to detect
-  \item ownership types goal: restrict object aliasing (through rules) $\rightarrow$ improve memory safety
-\end{itemize}
-\end{frame}
-
-
 \begin{frame}{Memory safety}
 \begin{itemize}
-  \item ownership types goal: improve memory safety
+  \item definition: program is memory safe if all memory pointers or references always refer to valid memory
   \item Google and Microsoft: 70 percent of vulnerabilities due to memory safety issues
   \item National Security Agency (USA) recommends memory-safe languages (instead of C/C++)
   \item examples: buffer overflows, memory leaks, double-free, use-after-free
@@ -102,7 +73,20 @@
 \end{frame}
 
 
-\begin{frame}[fragile]{Memory safety: example}
+\begin{frame}{Aliasing}
+\begin{itemize}
+  \item object aliasing: accessing the same memory through different symbolic names
+  % TODO: example
+  \item how to prevent bugs through (unintentional) aliases $\rightarrow$ bugs (hard to detect)
+  \begin{itemize}
+    \item ban aliasing altogether?
+    \item restrict where and how aliasing can be used (through ownership rules) $\rightarrow$ improve memory safety
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Aliasing: example}
 C++
 \begin{lstlisting}[language=C++]
 std::vector<int> v { 10, 11 };
@@ -118,6 +102,8 @@ let vptr = &mut v[1];  // 1. mutable reference
 Vec::push(&mut v, 12); // 2. mutable reference
 println!("{}", *vptr); // compiler error
 \end{lstlisting}
+
+Observation: an action through an object (\emph{v}) will also affect all of its aliases (\emph{vptr}), even though these aliases might not "expect" a change.
 \end{frame}
 
 
@@ -259,11 +245,9 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
 
 \begin{frame}{Owners-as-modifiers: implications}
 \begin{itemize}
-  % \item any external reference to an object must go through its owner
-  % \item objects are only protected from external access, not internal access
   \item owners-as-modifiers: only the owners can modify objects
-  % \item doesn't allow common idioms that involve aliasing
-  % \item model restricts \emph{where} references can point, not \emph{how} references are used
+  \item model allows references to objects in arbitrary contexts, but restricts \emph{how} the references can be used
+  \item fulfills requirements for verification of the functional correctness of object-oriented programs
 \end{itemize}
 
 \begin{figure}
@@ -286,20 +270,36 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
 \end{figure}
 \end{frame}
 
+\section{Ownership in Rust}
 
-\begin{frame}{From theory to Rust}
+\begin{frame}{From theory to implementation}
 \begin{itemize}
+  \item Rust's ownership system: extended version of owners-as-modifiers
+  \begin{itemize}
+    \item immutable (read-only) and mutable references allowed (not in owners-as-dominators)
+    \item no garbage collection (overhead)
+    \item extensions:
+    \begin{itemize}
+      \item transferring ownership from one object to another
+      \item object immutability by default
+    \end{itemize}
+  \end{itemize}
+  % \item aliasing concept essential to ownership types
+  % \item different ways of implementing aliasing:
+  % \begin{itemize}
+  %   \item pointers: exist in Rust, but their use is not advised
+  %   \item \emph{references}
+  % \end{itemize}
 \end{itemize}
 \end{frame}
 
 
-\section{Ownership in Rust}
-
-\begin{frame}{Memory allocation system}
-\end{frame}
+% \begin{frame}{Memory allocation system}
+% \end{frame}
 
 
 \begin{frame}{Transferring ownership}
+  Big difference to theoretical ownership types
 \end{frame}
 
 
@@ -314,7 +314,7 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
 
 \section{Conclusions and outlook}
 
-\begin{frame}
+\begin{frame}{Conclusions and outlook}
   Here are some conclusions.
 \end{frame}
 
