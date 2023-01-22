@@ -48,6 +48,7 @@
 
 
 % TODO: brief overview of sections somewhere (maybe end of introduction)
+% TODO: replace \emph with \verb
 
 \begin{abstract}
 % Abstract: Brief summary of area, problem, approach, key result
@@ -542,7 +543,7 @@ The scope of a reference starts where it is introduced and extends until the las
 
 \paragraph{Immutable references}
 
-Immutable references can be seen as read-only references and are acquired using the \emph{\&} operator.
+Immutable references can be seen as read-only references and are acquired using the \verb|&| operator.
 The value that immutable references refer to may not be modified.
 Otherwise the program will not compile.
 
@@ -570,7 +571,7 @@ Thereby, no immutable reference can affect another reference's reading of the va
 
 \paragraph{Mutable references}
 
-Rust also supports mutable references, which are created with the \emph{\&mut} keyword and allow the borrowed value to be modified.
+Rust also supports mutable references, which are created with the \verb|&mut| keyword and allow the borrowed value to be modified.
 For obvious reasons, creating a mutable reference is only possible if the borrowed value is also mutable.
 
 \begin{lstlisting}[language=Rust]
@@ -587,8 +588,8 @@ The scope of a mutable reference to a value may not overlap with the scope of an
 This implies that there may only exist one mutable reference to a value at any given time.
 During this time, no further immutable or mutable references are allowed.
 
-This restriction exists to identify and prevent \emph{data races}, which can cause undefined behavior at compile time.
-A data race occurs when two or more pointers access the same data simultaneously, at least one of the points is being used to write the data, and there exists no mechanism to synchronize access to the data \cite{rust-book}.
+This restriction exists to identify and prevent \emph{data races} at compile time, which can cause undefined behavior.
+A data race occurs when two or more pointers access the same data simultaneously, at least one of the pointers is being used to write the data, and there exists no mechanism to synchronize access to the data \cite{rust-book}.
 
 However, the following code example \cite{rust-book} shows that it is important to note that the creation of multiple mutable and immutable references with scopes that do not overlap is allowed.
 
@@ -648,17 +649,6 @@ Vec::push(&mut v, 12); // lifetime 'b
 let vptr = &mut v[1];  // lifetime 'a starts
 println!("{}", *vptr); // lifetime 'a ends
 \end{lstlisting}
-
-% TODO: explain how dangling references are prevented
-
-% explain this example:
-% \begin{lstlisting}
-% fn dangle() -> &String {
-%   let s = String::from("hello world");
-%   &s
-% }
-% \end{lstlisting}
-
 
 
 % \paragraph{Limits of Rust's ownership system}

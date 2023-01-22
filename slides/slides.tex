@@ -349,11 +349,63 @@ Stack-based primitives:
 \end{frame}
 
 
-\begin{frame}{References and borrowing}
+\begin{frame}{Lifetimes}
 \end{frame}
 
 
-\begin{frame}{Lifetimes}
+\begin{frame}{Borrowing}
+\begin{itemize}
+  \item \emph{reference}: an address that points to a value that is owned by another variable
+  \item unlike \emph{pointers}, a reference is guaranteed to point to a valid value
+  \item creating a reference in Rust is called \emph{borrowing}
+  \item a reference does not own the value it points to $\rightarrow$ only reference (not the borrowed value) is dropped at the end of the reference's scope
+  \item used for performing operations on values without taking ownership
+  % \item the scope of a reference starts where it is introduced and extends until the last time it is used
+  \item Rust supports immutable and mutable references
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Borrowing: immutable references}
+\begin{itemize}
+  \item read-only/shared references $\rightarrow$ compiler disallows modifying borrowed value
+  \item acquired using the \verb|&| operator
+  \item unlimited amount of immutable references to same value are allowed (if no mutable references)
+
+  \begin{lstlisting}[language=Rust]
+  let s = String::from("hello");
+  let r1 = &s; // 1. reference
+  let r2 = &s; // 2. reference
+  println!("r1: {}, r2: {}", *r1, *r2);
+  \end{lstlisting}
+\end{itemize}
+\end{frame}
+
+
+% TODO: combine this and next slide
+\begin{frame}[fragile]{Borrowing: mutable references}
+\begin{itemize}
+  \item borrowed value may be modified
+  \item acquired using the \verb|&mut| keyword
+  \item borrowed value must be mutable with \verb|mut| (variables are immutable by default)
+
+  \begin{lstlisting}[language=Rust]
+  let mut s = String::from("hello");
+  s.push_str(" world");
+  String::push_str(&mut s, " world"); // equivalent
+  \end{lstlisting}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Borrowing: mutable references}
+\begin{itemize}
+  \item \emph{data races}: multiple pointers access the same data simultaneously and at least one is writing to the data
+  \item goal: prevent \emph{data races} at compile time
+    % TODO: latex beamer make stand out/highlight
+  \item lifetime of mutable reference may not overlap with lifetime of any other (immutable or mutable) reference
+  \item only one mutable reference to a value allowed at any given time
+\end{itemize}
 \end{frame}
 
 
@@ -381,6 +433,25 @@ Stack-based primitives:
   \end{lstlisting}
 \end{itemize}
 \end{frame}
+
+% TODO: will it compile: create multiple mutable references, but only use one
+% However, the following code example \cite{rust-book} shows that it is important to note that the creation of multiple mutable and immutable references with scopes that do not overlap is allowed.
+
+%   \begin{lstlisting}[language=Rust]
+%   let mut s = String::from("hello");
+
+%   let r1 = &s; // allowed
+%   let r2 = &s; // allowed
+%   println!("{} and {}", r1, r2);
+
+%   let r3 = &mut s; // allowed
+%   r3.push_str(" world");
+%   println!("{}", r3);
+%   \end{lstlisting}
+
+% Since \emph{r1} and \emph{r2} are not used after line 5, that is where their scopes end.
+% The scope of the mutable reference \emph{r3} only starts in line 7.
+% Therefore, the scopes of the mutable reference and the two immutable references do not overlap, and the program compiles.
 
 
 \section{Evaluation: another implementation}
