@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[handout]{beamer}
 
 \usepackage[utf8]{inputenc}
 \usepackage{listings}
@@ -78,20 +78,23 @@
 \end{frame}
 
 
-\begin{frame}{Aliasing}
-\begin{itemize}
-  \item object aliasing: accessing the same memory through different symbolic names
-  % TODO: example
-  \item how to prevent bugs through (unintentional) aliases $\rightarrow$ bugs (hard to detect)
-  \begin{itemize}
-    \item ban aliasing altogether?
-    \item restrict where and how aliasing can be used (through ownership rules) $\rightarrow$ improve memory safety
-  \end{itemize}
-\end{itemize}
-\end{frame}
+% \begin{frame}{Aliasing}
+% \begin{itemize}
+%   \item 
+%   % TODO: example
+%   \item how to prevent bugs through unintentional aliases (hard to detect)?
+%   \begin{itemize}
+%     \item ban aliasing altogether
+%     \item restrict where and how aliasing can be used (through ownership rules) $\rightarrow$ improve memory safety
+%   \end{itemize}
+% \end{itemize}
+% \end{frame}
 
 
-\begin{frame}[fragile]{Aliasing: example}
+\begin{frame}[fragile]{Aliasing}
+\emph{aliasing}: accessing same memory through different symbolic names
+\pause
+
 C++
 \begin{lstlisting}[language=C++]
 std::vector<int> v { 10, 11 };
@@ -99,6 +102,8 @@ int *vptr = &v[1];  // points into v
 v.push_back(12);    // v buffer reallocated => vptr dangling
 std::cout << *vptr; // bug (use-after-free)
 \end{lstlisting}
+\pause
+
 
 Rust
 \begin{lstlisting}[language=Rust]
@@ -116,16 +121,17 @@ Observation: an action through an object (\emph{v}) will also affect all of its 
 
 \begin{frame}{Ownership types}
 \begin{itemize}
-  \item object-oriented programs:
-  \begin{itemize}
-    \item objects can reference any other object
-    \item objects can read and modify other objects' fields
-    \item makes it difficult to understand, to maintain, and to reason about
-  \end{itemize}
+  % \item object-oriented programs:
+  % \begin{itemize}
+  %   \item objects can reference any other object
+  %   \item objects can read and modify other objects' fields
+  %   \item makes it difficult to understand, to maintain, and to reason about
+  % \end{itemize}
   \item using ownership types:
   \begin{itemize}
     \item limit which objects can be referenced
-    \item can specify whether the referenced objects may be mutated or just read from
+    \item specify whether the referenced objects may be mutated or just read from
+    \item no garbage collection (overhead)
   \end{itemize}
 \end{itemize}
 \end{frame}
@@ -135,11 +141,11 @@ Observation: an action through an object (\emph{v}) will also affect all of its 
 \begin{itemize}
   % TODO: different highlighting than italics
   \item objects can be \emph{owners} of other objects
-  \item \emph{inside} relation: \emph{a} is \emph{inside} \emph{b} if they are the same object or \emph{a} is transitively owned by \emph{b}
-  \item \emph{outside} relation: converse of \emph{inside} relation
+  \item special \emph{world} object is root of the ownership hierarchy tree
   \item \emph{ownership context}: set of all objects that an object owns
   \item \emph{siblings}: objects in the same ownership context
-  \item special \emph{world} object is root of the ownership hierarchy tree
+  \item \emph{inside} relation: \emph{a} is \emph{inside} \emph{b} if they are the same object or \emph{a} is transitively owned by \emph{b}
+  \item \emph{outside} relation: converse of \emph{inside} relation
 \end{itemize}
 
 % TODO: make spacing between vertical objects smaller
@@ -194,10 +200,10 @@ For \emph{a} to validly reference \emph{b}:
 \begin{frame}{Owners-as-dominators: implications}
 \begin{itemize}
   \item any external reference to an object must go through its owner
-  \item objects are only protected from external access, not internal access
   \item owners-as-dominators: owner is dominator for all of its owned objects
-  \item doesn't allow common idioms that involve aliasing
+  \item objects are only protected from external access, not internal access
   \item model restricts \emph{where} references can point, not \emph{how} references are used
+  \item doesn't allow common idioms that involve aliasing
 \end{itemize}
 
 \begin{figure}[fragile]
@@ -281,14 +287,13 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
 \begin{itemize}
   \item Rust's ownership system: extends owners-as-modifiers
   \begin{itemize}
-    \item no garbage collection (overhead)
     \item immutable (read-only) and mutable references % (not in owners-as-dominators)
     \item rules for compiler to check validity of references
     \item extensions:
     \begin{itemize}
       \item transferring ownership from one object to another
       \item object immutability by default
-      \item Resource Acquisition Is Initialization (similar to C++)
+      % \item Resource Acquisition Is Initialization (similar to C++)
     \end{itemize}
   \end{itemize}
   % \item aliasing concept essential to ownership types
@@ -349,7 +354,7 @@ Stack-based primitives:
   let y: u32 = x; // x is copied instead of moved
   println!("x: {}, y: {}", x, y); // x and y valid
   \end{lstlisting}
-  \item stack-based values implement \verb|Copy| trait (exclusive to \verb|Drop| trait)
+  \item stack-based values implement \verb|Copy| trait
 \end{itemize}
 \end{frame}
 
@@ -369,39 +374,18 @@ Stack-based primitives:
 
 \begin{frame}[fragile]{Lifetimes}
 \begin{itemize}
-  \item every reference has a \emph{lifetime}
+  \item every reference has a \emph{lifetime}: scope for which reference is valid
   \item references grant temporary access to a data structure $\rightarrow$ how long is "temporary"?
   \item construct that the \emph{borrow checker} uses to ensure that all borrows are valid
-  \item lifetime annotations: \verb|&'a T| or \verb|&'a mut T| , where \verb|'a| is the lifetime of the reference
   \item compiler uses conventions to elide lifetimes $\rightarrow$ explicit annotations not always required
-  \item compiler constraints:
+  \item program is valid if all of the below hold for all references:
   \begin{enumerate}
-    \item The reference can only be used while its lifetime is ongoing, and
-    \item the original referent is not used at all (for mutable references) or does not get mutated (for immutable references) until the lifetime of the newly created reference has expired.
+    \item the reference can only be used while its lifetime is ongoing
+    % \item the original referent is not used at all (for mutable references) or does not get mutated (for immutable references) until the lifetime of the newly created reference has expired.
+    \item immutable reference: the borrowed value does not get mutated during lifetime
+    \item mutable reference: the borrowed value is not used at all during lifetime
   \end{enumerate}
-\end{itemize}
-\end{frame}
-
-
-\begin{frame}[fragile]{Lifetimes: example}
-\begin{itemize}
-  \begin{lstlisting}[language=Rust]
-  fn main() {
-    let s1 = String::from("short");
-    let s2 = String::from("longest");
-    let longest = longest(&s1, &s2);
-    println!("longest string: '{}'", longest);
-  }
-  fn longest<'a>(s1: &'a str, s2: &'a str) -> &'a str {
-    if s1.len() > s2.len() {
-      s1
-    } else {
-      s2
-    }
-  }
-  \end{lstlisting}
-  \item longest function: return type contains a borrowed value, but unclear whether it is borrowed from 's1' or 's2'
-  \item 's1' and 's2' have to live at least as long as lifetime 'a
+  % \item lifetime annotations: \verb|&'a T| or \verb|&'a mut T| , where \verb|'a| is the lifetime of the reference
 \end{itemize}
 \end{frame}
 
@@ -493,7 +477,7 @@ Stack-based primitives:
   let mut s = String::from("hello");
   let r1 = &s;
   let r2 = &s;
-  println!("{} and {}", r1, r2);
+  println!("{} and {}", *r1, *r2);
   let r3 = &mut s;
   r3.push_str(" world");
   \end{lstlisting}
@@ -505,7 +489,7 @@ Stack-based primitives:
   let mut s = String::from("hello");
   let r1 = &s; // lifetime 'a starts
   let r2 = &s; // lifetime 'b starts
-  println!("{} and {}", r1, r2);
+  println!("{} and {}", *r1, *r2);
   // lifetimes 'a and 'b end
   let r3 = &mut s; // lifetime 'c starts
   r3.push_str(" world");
@@ -622,6 +606,30 @@ Rust: safer move sematics through destructive moves enforced by the compiler
 
 
 % \section{Extra slides}
+
+
+% \begin{frame}[fragile]{Lifetimes: example}
+% \begin{itemize}
+%   \begin{lstlisting}[language=Rust]
+%   fn main() {
+%     let s1 = String::from("short");
+%     let s2 = String::from("longest");
+%     let longest = longest(&s1, &s2);
+%     println!("longest string: '{}'", longest);
+%   }
+%   fn longest<'a>(s1: &'a str, s2: &'a str) -> &'a str {
+%     if s1.len() > s2.len() {
+%       s1
+%     } else {
+%       s2
+%     }
+%   }
+%   \end{lstlisting}
+%   \item longest function: return type contains a borrowed value, but unclear whether it is borrowed from 's1' or 's2'
+%   \item 's1' and 's2' have to live at least as long as lifetime 'a
+% \end{itemize}
+% \end{frame}
+
 
 % \begin{frame}{Lifetime elision}
 % Here are the three rules:

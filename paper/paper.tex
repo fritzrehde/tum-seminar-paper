@@ -162,16 +162,18 @@ If not otherwise indicated, all of the information gathered in this chapter stem
 \subsection{Domain specific terms}
 \label{sec:domain-specific-terms}
 
-In the following, some terms from the Ownership Types Survey \cite{ownership-types-survey}, which are commonly used in this chapter, are defined.
+In the following, some terms from the Ownership Types survey \cite{ownership-types-survey}, which are commonly used in this chapter, are defined.
 
-The core concept of ownership types is that an object can be the \emph{owner} of other objects.
-
+The core concept of ownership types is that each object is \emph{owned} by (at most) one other object, called its \emph{owner}.
+Objects are organized into different \emph{ownership contexts}.
+An ownership context is the set of all objects with the same owner.
+Objects that are in the same ownership context, meaning they share the same owner, are called \emph{siblings} or \emph{peers}.
+More informally, an object's ownership context can also be visualized as a box into which all of its owned objects are placed, to store and protect these objects.
+Each object is considered to be \emph{inside} the object whose ownership context box it is placed in.
+There also exists a more formal definition of the \emph{inside} relation:
 Given the two objects \emph{a} and \emph{b}, \emph{a} is \emph{inside} \emph{b} if \emph{a} is the same object as \emph{b} or \emph{a} is \emph{owned} by \emph{b}, transitively.
 The \emph{outside} relation is the converse of the \emph{inside} relation.
-
-In most ownership-type variants, the heap is divided into different regions called \emph{ownership contexts}.
-Each object has one single ownership context, which is the set of all objects it owns.
-Objects that are in the same ownership context are called \emph{siblings} or \emph{peers}.
+This hierarchy induces a nesting relationship between objects. \cite{ownership-types-survey}
 
 
 \subsection{Owners-as-dominators}
