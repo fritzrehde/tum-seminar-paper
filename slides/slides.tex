@@ -10,10 +10,8 @@
   showstringspaces=false,
   columns=flexible,
   basicstyle=\footnotesize\ttfamily,
-  % basicstyle={\small\ttfamily},
   numbers=left,
   numbersep=5pt,
-  % xleftmargin=\parindent,
   numberstyle=\color{gray},
   keywordstyle=\bfseries\color{blue},
   commentstyle=\color{dkgreen},
@@ -513,33 +511,23 @@ Stack-based primitives:
 \begin{itemize}
   \begin{lstlisting}[language=Rust]
   let mut s = String::from("hello");
-  let b = &mut a;
-  Vec::push(&mut v, 12);
-  println!("{}", *b);
-  \end{lstlisting}
-  \pause
-
-  \begin{lstlisting}[language=Rust]
-  let mut v = vec![10, 11];
-  Vec::push(&mut v, 12); // lifetime 'b starts and ends
-  let vptr = &mut v[1];  // lifetime 'a starts
-  println!("{}", *vptr); // lifetime 'a ends
+  let r = &s;
+  s.push_str(" world");
+  println!("{}", *r);
   \end{lstlisting}
 
   \item Will it compile? \pause No.
-  % TODO: lifetime explanation
-  \item Why not? \pause Borrowed value 'b' does not live as long as the reference 'a'.
+  \item Why not? \pause Lifetimes of mutable and immutable references overlap (cannot borrow 's' as mutable because it is also borrowed as immutable)
   \item Refactored version that compiles:\pause
 
   \begin{lstlisting}[language=Rust]
-  let a;
-  let b: u32 = 42;
-  a = &b;
-  println!("{}", *a) // dereference a
+  let mut s = String::from("hello");
+  s.push_str(" world"); // lifetime 'a starts and ends
+  let r = &s; // lifetime 'b starts
+  println!("{}", *r); // lifetime 'b ends
   \end{lstlisting}
 \end{itemize}
 \end{frame}
-
 
 
 \section{Evaluation}
