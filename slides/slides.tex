@@ -404,7 +404,7 @@ Stack-based primitives:
 \begin{frame}[fragile]{Borrowing: immutable references}
 \begin{itemize}
   \item read-only/shared references $\rightarrow$ compiler disallows modifying borrowed value
-  \item acquired using the \verb|&| operator
+  \item \verb|&| and \verb|*| operators
   \item unlimited amount of immutable references to same value are allowed (if no mutable references)
 
   \begin{lstlisting}[language=Rust]
@@ -469,8 +469,7 @@ Stack-based primitives:
   \end{lstlisting}
 
   \item Will it compile? \pause No.
-  % TODO: lifetime explanation
-  \item Why not? \pause Borrowed value 'b' does not live as long as the reference 'a'
+  \item Why not? \pause Borrowed value 'b' does not live as long as the reference 'a'.
   \item Refactored version that compiles:\pause
 
   \begin{lstlisting}[language=Rust]
@@ -482,24 +481,65 @@ Stack-based primitives:
 \end{itemize}
 \end{frame}
 
-% TODO: will it compile: create multiple mutable references, but only use one
-% However, the following code example \cite{rust-book} shows that it is important to note that the creation of multiple mutable and immutable references with scopes that do not overlap is allowed.
 
-%   \begin{lstlisting}[language=Rust]
-%   let mut s = String::from("hello");
+\begin{frame}[fragile]{Borrowing: examples}
+\begin{itemize}
+  \begin{lstlisting}[language=Rust]
+  let mut s = String::from("hello");
+  let r1 = &s;
+  let r2 = &s;
+  println!("{} and {}", r1, r2);
+  let r3 = &mut s;
+  r3.push_str(" world");
+  \end{lstlisting}
 
-%   let r1 = &s; // allowed
-%   let r2 = &s; // allowed
-%   println!("{} and {}", r1, r2);
+  \item Will it compile? \pause Yes.
+  \item Why? \pause Lifetimes of immutable and mutable references don't overlap.
 
-%   let r3 = &mut s; // allowed
-%   r3.push_str(" world");
-%   println!("{}", r3);
-%   \end{lstlisting}
+  \begin{lstlisting}[language=Rust]
+  let mut s = String::from("hello");
+  let r1 = &s; // lifetime 'a starts
+  let r2 = &s; // lifetime 'b starts
+  println!("{} and {}", r1, r2);
+  // lifetimes 'a and 'b end
+  let r3 = &mut s; // lifetime 'c starts
+  r3.push_str(" world");
+  \end{lstlisting}
+\end{itemize}
+\end{frame}
 
-% Since \emph{r1} and \emph{r2} are not used after line 5, that is where their scopes end.
-% The scope of the mutable reference \emph{r3} only starts in line 7.
-% Therefore, the scopes of the mutable reference and the two immutable references do not overlap, and the program compiles.
+
+\begin{frame}[fragile]{Borrowing: examples}
+\begin{itemize}
+  \begin{lstlisting}[language=Rust]
+  let mut s = String::from("hello");
+  let b = &mut a;
+  Vec::push(&mut v, 12);
+  println!("{}", *b);
+  \end{lstlisting}
+  \pause
+
+  \begin{lstlisting}[language=Rust]
+  let mut v = vec![10, 11];
+  Vec::push(&mut v, 12); // lifetime 'b starts and ends
+  let vptr = &mut v[1];  // lifetime 'a starts
+  println!("{}", *vptr); // lifetime 'a ends
+  \end{lstlisting}
+
+  \item Will it compile? \pause No.
+  % TODO: lifetime explanation
+  \item Why not? \pause Borrowed value 'b' does not live as long as the reference 'a'.
+  \item Refactored version that compiles:\pause
+
+  \begin{lstlisting}[language=Rust]
+  let a;
+  let b: u32 = 42;
+  a = &b;
+  println!("{}", *a) // dereference a
+  \end{lstlisting}
+\end{itemize}
+\end{frame}
+
 
 
 \section{Evaluation}
@@ -585,5 +625,35 @@ Rust: safer move sematics through destructive moves enforced by the compiler
 \end{itemize}
 \end{frame}
 
+
+\section{Extra slides}
+
+\begin{frame}{Lifetime elision}
+Here are the three rules:
+\begin{itemize}
+  \item Each elided lifetime in a function’s arguments becomes a distinct lifetime parameter.
+  \item If there is exactly one input lifetime, elided or not, that lifetime is assigned to all elided lifetimes in the return values of that function.
+  \item If there are multiple input lifetimes, but one of them is &self or &mut self, the lifetime of self is assigned to all elided output lifetimes.
+\end{itemize}
+Otherwise, it is an error to elide an output lifetime.
+\end{frame}
+
+\begin{frame}[fragile]{Lifetime elision: examples}
+\begin{lstlisting}[language=Rust]
+fn print(s: &str); // elided
+fn print<'a>(s: &'a str); // expanded
+
+fn debug(lvl: u32, s: &str); // elided
+fn debug<'a>(lvl: u32, s: &'a str); // expanded
+
+fn substr(s: &str, until: u32) -> &str; // elided
+fn substr<'a>(s: &'a str, until: u32) -> &'a str; // expanded
+
+fn get_str() -> &str; // ILLEGAL, no inputs
+
+fn frob(s: &str, t: &str) -> &str; // ILLEGAL, two inputs
+fn frob<'a, 'b>(s: &'a str, t: &'b str) -> &str; // Expanded: Output lifetime is ambiguous
+\end{lstlisting}
+\end{frame}
 
 \end{document}
