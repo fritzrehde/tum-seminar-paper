@@ -698,7 +698,7 @@ let s_moved = s; // 's' is moved
 Instead of using type-specific constructors and assignment operators, in Rust, we would \emph{clone} a value to copy it (stack-based primitives are copied automatically without an explicit clone) or directly move it without additional syntax.
 In C++, we must use \verb|std::move| to move a named value, which simply casts a reference to an R-value reference, to indicate to the compiler that the move constructor for the specific type should be called \cite{cpp-rust-ownership}.
 After the move of \emph{s} into \emph{s\_moved} in Rust, the compiler will not allow another use of the moved-from object \emph{s} as its lifetime has ended.
-In contrast, a \verb|std::move| in C++ has no formal effect on the lifetime on the moved-from object \emph{s}.
+In contrast, a \verb|std::move| in C++ has no formal effect on the lifetime of the moved-from object \emph{s}.
 This means that the object \emph{s} can still be used after being moved, even though there is no guarantee by the compiler that it is still valid, because there exists no consistent specification on how move constructors or assignment operators should be implemented.
 We can conclude that Rust, in contrast to C++, adds safety to its move sematics through destructive moves enforced by the compiler \cite{cpp-rust-ownership}.
 
@@ -711,7 +711,7 @@ We have only focused on the move semantics in the two languages, but there are m
 In summary, programming languages based on ownership types can eliminate many aliasing-related issues by enforcing strict rules on the existence and behavior of references to values.
 The owners-as-dominators and owners-as-modifiers models enforce different levels of strictness on both where and how references may be used.
 Furthermore, an enhanced version of the ownership concept is integral to the Rust programming language.
-Compared to more commonly used low-level programming languages like C, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time, allowing for safe runtime performance and omitting the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform.
+Compared to more commonly used low-level programming languages like C++, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time, allowing for safe runtime performance and omitting the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform.
 Even though the Rust compiler forces developers to think more intentionally about how they deal with memory through ownership, they will receive helpful compile-time error messages instead of crashes or undefined behavior at runtime if they do something wrong.
 
 It will be interesting to see how Rust's development will continue in the future.

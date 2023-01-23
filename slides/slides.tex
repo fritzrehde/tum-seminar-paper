@@ -349,11 +349,7 @@ Stack-based primitives:
 \end{frame}
 
 
-\begin{frame}{Lifetimes}
-\end{frame}
-
-
-\begin{frame}{Borrowing}
+\begin{frame}[fragile]{Borrowing}
 \begin{itemize}
   \item \emph{reference}: an address that points to a value that is owned by another variable
   \item unlike \emph{pointers}, a reference is guaranteed to point to a valid value
@@ -361,7 +357,46 @@ Stack-based primitives:
   \item a reference does not own the value it points to $\rightarrow$ only reference (not the borrowed value) is dropped at the end of the reference's scope
   \item used for performing operations on values without taking ownership
   % \item the scope of a reference starts where it is introduced and extends until the last time it is used
-  \item Rust supports immutable and mutable references
+  \item Rust supports immutable (\verb|&|) and mutable (\verb|&mut|) references
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Lifetimes}
+\begin{itemize}
+  \item every reference has a \emph{lifetime}
+  \item references grant temporary access to a data structure $\rightarrow$ how long is "temporary"?
+  \item construct that the \emph{borrow checker} uses to ensure that all borrows are valid
+  \item lifetime annotations: \verb|&'a T| or \verb|&'a mut T| , where \verb|'a| is the lifetime of the reference
+  \item compiler uses conventions to elide lifetimes $\rightarrow$ explicit annotations not always required
+  \item compiler constraints:
+  \begin{enumerate}
+    \item The reference can only be used while its lifetime is ongoing, and
+    \item the original referent is not used at all (for mutable references) or does not get mutated (for immutable references) until the lifetime of the newly created reference has expired.
+  \end{enumerate}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Lifetimes: example}
+\begin{itemize}
+  \begin{lstlisting}[language=Rust]
+  fn main() {
+    let s1 = String::from("short");
+    let s2 = String::from("longest");
+    let longest = longest(&s1, &s2);
+    println!("longest string: '{}'", longest);
+  }
+  fn longest<'a>(s1: &'a str, s2: &'a str) -> &'a str {
+    if s1.len() > s2.len() {
+      s1
+    } else {
+      s2
+    }
+  }
+  \end{lstlisting}
+  \item longest function: return type contains a borrowed value, but unclear whether it is borrowed from 's1' or 's2'
+  \item 's1' and 's2' have to live at least as long as lifetime 'a
 \end{itemize}
 \end{frame}
 
@@ -382,7 +417,6 @@ Stack-based primitives:
 \end{frame}
 
 
-% TODO: combine this and next slide
 \begin{frame}[fragile]{Borrowing: mutable references}
 \begin{itemize}
   \item borrowed value may be modified
@@ -405,11 +439,25 @@ Stack-based primitives:
     % TODO: latex beamer make stand out/highlight
   \item lifetime of mutable reference may not overlap with lifetime of any other (immutable or mutable) reference
   \item only one mutable reference to a value allowed at any given time
+
+  \begin{lstlisting}[language=Rust]
+  let mut v = vec![10, 11];
+  let vptr = &mut v[1];  // lifetime 'a starts
+  Vec::push(&mut v, 12); // lifetime 'b starts and ends
+  println!("{}", *vptr); // lifetime 'a ends
+  \end{lstlisting}
+  \pause
+  \begin{lstlisting}[language=Rust]
+  let mut v = vec![10, 11];
+  Vec::push(&mut v, 12); // lifetime 'b starts and ends
+  let vptr = &mut v[1];  // lifetime 'a starts
+  println!("{}", *vptr); // lifetime 'a ends
+  \end{lstlisting}
 \end{itemize}
 \end{frame}
 
 
-\begin{frame}[fragile]{References and borrowing: examples}
+\begin{frame}[fragile]{Borrowing: examples}
 \begin{itemize}
   \begin{lstlisting}[language=Rust]
   let a;
@@ -422,7 +470,7 @@ Stack-based primitives:
 
   \item Will it compile? \pause No.
   % TODO: lifetime explanation
-  \item Why not? \pause Borrowed value 'b' does not live long enough/is used after being dropped.
+  \item Why not? \pause Borrowed value 'b' does not live as long as the reference 'a'
   \item Refactored version that compiles:\pause
 
   \begin{lstlisting}[language=Rust]
@@ -454,14 +502,87 @@ Stack-based primitives:
 % Therefore, the scopes of the mutable reference and the two immutable references do not overlap, and the program compiles.
 
 
-\section{Evaluation: another implementation}
+\section{Evaluation}
 
+\begin{frame}[fragile]{Another implementation: C++}
+\begin{itemize}
+  \item integration of move semantics into language: Rust early on, C++ late in its life
+  \item move semantics closely related to constructors and assignment operators (overloaded for classes)
+  \item different reference types based on value categories:
+  \begin{itemize}
+    \item L-value references: refer to named values $\rightarrow$ copy
+    \item R-value references: refer to temporary results of expression evaluations $\rightarrow$ move
+  \end{itemize}
+  \item \emph{overload resolution process} will select matching overload based on reference's value category
+  \begin{lstlisting}[language=C++]
+  struct S {
+    S() {} // default constructor
+    S(const S&) {...} // copy constructor
+    S(S&&) {...} // move constructor
+    S operator=(const S&) {...} // copy assignment operator
+    S operator=(S&&) {... } // move assignment operator
+    // ... more functions and data fields etc.
+  }
+  \end{lstlisting}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Move semantics: C++ vs Rust}
+C++
+\begin{lstlisting}[language=C++]
+S s{};
+S s_copied{s}; // copy constructor
+S s_moved{std::move(s)}; // move constructor
+// problem: 's' can still be used
+\end{lstlisting}
+
+\verb|std::move|:
+\begin{itemize}
+  \item "move" a named value by casting reference to an R-value reference to tell compiler to use move constructor
+  \item no formal effect on the lifetime of the moved-from object $\rightarrow$ moved-from object can still be used, but compiler can't guarantee it is valid
+  \item no move constructor or move assignment operator implementation specification
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Move semantics: C++ vs Rust}
+C++
+\begin{lstlisting}[language=C++]
+S s{};
+S s_copied{s}; // copy constructor
+S s_moved{std::move(s)}; // move constructor
+// problem: 's' can still be used
+\end{lstlisting}
+
+Rust
+\begin{lstlisting}[language=Rust]
+let s = S::default();
+let s_copied = s.clone();
+let s_moved = s; // 's' is moved
+// compiler prevents use of 's'
+\end{lstlisting}
+
+Rust: safer move sematics through destructive moves enforced by the compiler
+\end{frame}
 
 
 \section{Conclusions and outlook}
 
 \begin{frame}{Conclusions and outlook}
-  Here are some conclusions.
+\begin{itemize}
+  % \item programming languages based on ownership types can eliminate many aliasing-related issues by enforcing strict rules on the existence and behavior of references to values
+  \item \emph{owners-as-dominators} and \emph{owners-as-modifiers} models: different strictness on \emph{where} and \emph{how} references may be used
+  \item Rust: 
+  \begin{itemize}
+    \item ownership-related rules that are strictly enforced at compile time
+    \item helpful compile-time error messages instead of crashes or UB at runtime
+    % \item omitting the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform
+    \item "fighting against the borrow checker" forces more explicit memory managenemt through ownership
+  \end{itemize}
+  \item will ownership types be incorporated into more new or existing programming languages in the future?
+  \item maybe upcoming presentations on C++ enhancements (Carbon and cppfront) fix some of these issues?
+\end{itemize}
 \end{frame}
 
 
