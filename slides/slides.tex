@@ -43,6 +43,13 @@
   % Variant without triangle
   % \vfill\llap{\usebeamerfont{footline}\usebeamercolor[fg]{footline}\insertframenumber\hskip3pt}\vskip3pt%
 }
+% TODO: navigation bar
+% \setbeamertemplate{footline}{%
+%  \begin{beamercolorbox}[ignorebg,ht=2.25ex,dp=3.75ex]%
+%        {section in head/foot}%
+%    \insertsectionnavigationhorizontal{\dimexpr\paperwidth-1cm}{}{}%
+%  \end{beamercolorbox}%
+% }
 
 \title{Ownership types in theory and practice (in Rust)}
 \author{Fritz Rehde}
@@ -105,7 +112,7 @@ Observation: an action through an object (\emph{v}) will also affect all of its 
 \end{frame}
 
 
-\section{Ownership types in theory}
+\section{Ownership types}
 
 \begin{frame}{Ownership types}
 \begin{itemize}
@@ -595,7 +602,7 @@ Rust: safer move sematics through destructive moves enforced by the compiler
 \end{frame}
 
 
-\section{Conclusions and outlook}
+\section{Conclusion}
 
 \begin{frame}{Conclusions and outlook}
 \begin{itemize}
@@ -614,34 +621,34 @@ Rust: safer move sematics through destructive moves enforced by the compiler
 \end{frame}
 
 
-\section{Extra slides}
+% \section{Extra slides}
 
-\begin{frame}{Lifetime elision}
-Here are the three rules:
-\begin{itemize}
-  \item Each elided lifetime in a function’s arguments becomes a distinct lifetime parameter.
-  \item If there is exactly one input lifetime, elided or not, that lifetime is assigned to all elided lifetimes in the return values of that function.
-  \item If there are multiple input lifetimes, but one of them is &self or &mut self, the lifetime of self is assigned to all elided output lifetimes.
-\end{itemize}
-Otherwise, it is an error to elide an output lifetime.
-\end{frame}
+% \begin{frame}{Lifetime elision}
+% Here are the three rules:
+% \begin{itemize}
+%   \item Each elided lifetime in a function’s arguments becomes a distinct lifetime parameter.
+%   \item If there is exactly one input lifetime, elided or not, that lifetime is assigned to all elided lifetimes in the return values of that function.
+%   \item If there are multiple input lifetimes, but one of them is &self or &mut self, the lifetime of self is assigned to all elided output lifetimes.
+% \end{itemize}
+% Otherwise, it is an error to elide an output lifetime.
+% \end{frame}
 
-\begin{frame}[fragile]{Lifetime elision: examples}
-\begin{lstlisting}[language=Rust]
-fn print(s: &str); // elided
-fn print<'a>(s: &'a str); // expanded
+% \begin{frame}[fragile]{Lifetime elision: examples}
+% \begin{lstlisting}[language=Rust]
+% fn print(s: &str); // elided
+% fn print<'a>(s: &'a str); // expanded
 
-fn debug(lvl: u32, s: &str); // elided
-fn debug<'a>(lvl: u32, s: &'a str); // expanded
+% fn debug(lvl: u32, s: &str); // elided
+% fn debug<'a>(lvl: u32, s: &'a str); // expanded
 
-fn substr(s: &str, until: u32) -> &str; // elided
-fn substr<'a>(s: &'a str, until: u32) -> &'a str; // expanded
+% fn substr(s: &str, until: u32) -> &str; // elided
+% fn substr<'a>(s: &'a str, until: u32) -> &'a str; // expanded
 
-fn get_str() -> &str; // ILLEGAL, no inputs
+% fn get_str() -> &str; // ILLEGAL, no inputs
 
-fn frob(s: &str, t: &str) -> &str; // ILLEGAL, two inputs
-fn frob<'a, 'b>(s: &'a str, t: &'b str) -> &str; // Expanded: Output lifetime is ambiguous
-\end{lstlisting}
-\end{frame}
+% fn frob(s: &str, t: &str) -> &str; // ILLEGAL, two inputs
+% fn frob<'a, 'b>(s: &'a str, t: &'b str) -> &str; // Expanded: Output lifetime is ambiguous
+% \end{lstlisting}
+% \end{frame}
 
 \end{document}
