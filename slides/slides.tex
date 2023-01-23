@@ -567,7 +567,7 @@ S s_moved{std::move(s)}; // move constructor
 
 \verb|std::move|:
 \begin{itemize}
-  \item "move" a named value by casting reference to an R-value reference to tell compiler to use move constructor
+  \item "move" a named value by casting it to an R-value reference to tell compiler to use move constructor
   \item no formal effect on the lifetime of the moved-from object $\rightarrow$ moved-from object can still be used, but compiler can't guarantee it is valid
   \item no move constructor or move assignment operator implementation specification
 \end{itemize}
