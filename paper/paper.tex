@@ -85,7 +85,7 @@ The importance of memory safety is further underlined by the fact that the Natio
 
 There are a variety of potential occurrences of memory management issues.
 Examples include \emph{buffer overflows}, where data is accessed outside the bounds of an array, \emph{memory leaks}, where the programmer forgets to free memory that has been allocated, causing the program to, eventually, run out of memory, \emph{Use-After-Free}, where memory is accessed after it has been freed, \emph{Double-Free}, where memory is freed again after it had already been freed before, and the use of uninitialized memory.
-These issues can not only enable potential malicious exploits, they can also result in incorrect program results, the decrease of a program's performance or seemingly random program crashes.
+These issues can not only enable potential malicious exploits, but they can also result in incorrect program results, the decrease of a program's performance or seemingly random program crashes.
 
 Commonly used programming languages, such as C and C++, provide a lot of freedom and flexibility in memory management, but this comes at the cost of heavily relying on the programmer to perform the needed checks on memory references.
 Furthermore, the programmer must perform rigorous testing to ensure that the software handles surprising conditions.
@@ -114,7 +114,7 @@ If the vector's capacity were large enough, the new element would be appended to
 However, we will assume there is no more space for an additional element, so a new buffer is allocated, and all the existing elements are moved over.
 This case is interesting because \emph{vptr} still points to the old buffer!
 In other words, adding a new element to \emph{v} has turned \emph{vptr} into a dangling pointer.
-Therefore, trying to access the value which the dangling pointer \emph{vptr} points to will cause a use-after-free bug.
+Therefore, trying to access the value, which the dangling pointer \emph{vptr} points to, will cause a use-after-free bug.
 More generally, we can observe that an action through a pointer (\emph{v}) will also affect all of its aliases (\emph{vptr}), even though these aliases might not expect a change.
 The main problem here is that such memory issues cannot be detected at compile time.
 
@@ -141,7 +141,7 @@ In \ref{sec:rust-references} and \ref{sec:rust-lifetimes}, we will explain in mo
 The concept of ownership types provides one of the solutions aiming to eliminate many of the described memory-related bugs.
 Potential solutions to the aliasing problem include banning aliases altogether, clearly advertising aliases or managing and controlling their effects \cite{ownership-types-survey}.
 Many different flavors of ownership types have been explored.
-In this paper, state of the art implementations of the ownership types concept, such as owners-as-dominators and owners-as-modifiers, will be explored further.
+In this paper, state-of-the-art implementations of the ownership types concept, such as owners-as-dominators and owners-as-modifiers, will be explored further.
 These approaches differ in what kind of, if any, aliases they allow.
 
 
@@ -151,9 +151,9 @@ These approaches differ in what kind of, if any, aliases they allow.
 \label{sec:theory}
 
 In object-oriented programs, an object can reference any other object and read and modify its fields through direct field accesses or method calls.
-Such programs with arbitrary object structures are difficult to understand, to maintain, and to reason about. \cite{lightweight-ownership}
+Such programs with arbitrary object structures are difficult to understand, maintain, and reason about. \cite{lightweight-ownership}
 
-Ownership types can limit which objects can be referenced and can specify whether the referenced objects may be mutated or just read from.
+Ownership types can limit which objects can be referenced, and can specify whether the referenced objects may be mutated or just read from.
 
 If not otherwise indicated, all of the information gathered in this chapter stems from the Ownership Types Survey \cite{ownership-types-survey}.
 
@@ -226,7 +226,7 @@ An owner being able to access its owned objects is the most trivial and intuitiv
 
 \paragraph{Sibling}
 
-The objects \emph{car} and \emph{driver} are siblings, meaning that they can validly reference each other according to the second rule.
+The objects \emph{car} and \emph{driver} are siblings, meaning they can validly reference each other according to the second rule.
 
 The lack of further rules implies that siblings are the only objects that an object can validly reference besides the objects it owns and the objects it is inside of.
 The sibling relationship would, therefore, be used for objects that exist independently but should still be able to interact with each other.
@@ -236,10 +236,10 @@ The sibling relationship would, therefore, be used for objects that exist indepe
 
 The object \emph{engine} is inside the object \emph{car} because \emph{engine} is owned by \emph{car}.
 Conversely, \emph{car} is outside \emph{engine}.
-Therefore, \emph{engine} can validly reference \emph{car} according to the third rule.
+Therefore, according to the third rule, \emph{engine} can validly reference \emph{car}.
 
-The original Flexible Alias Protection model, which these ownership types are based on, imposed the same restriction.
-"The only objects that can access [an object] are the object that owns it and other objects inside that [object]" \cite{flexible-alias-protection}.
+The original Flexible Alias Protection model, on which these ownership types are based, imposed the same restriction.
+"The only objects that can access [an object] are the object that owns it, and other objects inside that [object]" \cite{flexible-alias-protection}.
 The implication is that this model only protects objects from external access.
 However, internally, an object can still access its owner (and its owner's owner etc.).
 
@@ -251,7 +251,7 @@ They state that, thereby, this owners-as-dominators model can handle iterators, 
 \paragraph{Further implications}
 
 Primarily, these three rules imply that any external reference to an object is only possible through its owner.
-This is examplified in Figure \ref{fig:owners-as-dominators} where the object \emph{world} is trying to access the object \emph{engine}, which is not allowed because \emph{world} is neither a direct owner of, a sibling of or inside of \emph{engine}.
+This is exemplified in Figure \ref{fig:owners-as-dominators} where the object \emph{world} is trying to access the object \emph{engine}, which is not allowed because \emph{world} is neither a direct owner of, a sibling of or inside of \emph{engine}.
 Instead, \emph{world} could only reference \emph{engine} through the \emph{engine}'s owner \emph{car}.
 
 According to Dietl and Müller \cite{lightweight-ownership}, the owners-as-dominators model restricts \emph{where} references are allowed to point to.
@@ -312,24 +312,14 @@ The advantage of this model is that it expands the programming possibilities of 
 % TODO: which requirements for verficiation?
 
 
-% \subsection{Limitations}
-% \subsection{From ownership types to Rust}
-
-% These early ownership type models carry some flaws with them. (lack features to be actually used)
-% For example, in a system using the owners-as-dominators approach, one cannot programmatically create iterators.
-
-% We can link certain owners-as-modifiers concepts to concepts from Rust.
-% Firstly, siblings...
-
-
 \section{Implementation in Rust}
 \label{sec:implementation-in-rust}
 
 Rust's notion of ownership is the culmination of a long line of work.
 Many researchers have aimed to develop systems for functional programming without garbage collection.
-According to Weiss et al. \cite{oxide}, it is best understood that Rust's ownership model is based off of Baker's work on Linear Lisp \cite{linear-lisp} where linearity enabled efficient reuse of objects in memory without garbage collection.
+According to Weiss et al. \cite{oxide}, it is best understood that Rust's ownership model is based on Baker's work on Linear Lisp \cite{linear-lisp} where linearity enabled efficient reuse of objects in memory without garbage collection.
 Furthermore, the resemblance is especially strong between Rust \emph{without} borrowing (the Rust terminology for referencing, explained in \ref{sec:rust-references}) and Baker's 'use-once' variables.
-'Use-once' variables are bound to linear (unshared, unaliased or singly-referenced) objects and are cheap to access and manage, because they require no synchronization or tracing garbage collection \cite{use-once}.
+'Use-once' variables are bound to linear (unshared, unaliased or singly-referenced) objects and are cheap to access and manage because they require no synchronization or tracing garbage collection \cite{use-once}.
 
 However, techniques like the 'use-once' variables differentiate themselves from Rust by requiring that all objects must be managed uniquely.
 Instead, Rust allows the use of shared references without mutation or unique references with unguarded mutation \cite{oxide}.
@@ -427,7 +417,7 @@ fn foo(b: HeapBasedType) {
 }
 \end{lstlisting}
 In \emph{foo}, \emph{b} is the owner of the value until it is \emph{dropped} at the end of the function.
-Again, accessing the moved-from variable, after the ownership of that value has been transferred elsewhere, will lead to a compile-time error.
+Again, accessing the moved-from variable after the ownership of that value has been transferred elsewhere will lead to a compile-time error.
 In this case, trying to access \emph{a} after line 3 would not compile, as \emph{a} is no longer the owner of the value.
 
 The heap-allocated \emph{String} type in Rust provides a good example of heap-based ownership transfer.
@@ -475,7 +465,7 @@ fn main() {
 \end{lstlisting}
 
 In line 7, we perform a so-called \emph{partial move}, which means that parts of the variable \emph{car} are moved into \emph{engine}.
-The untouched parts, such as \emph{wheels} in our example, will still be accessible afterwards.
+The untouched parts, such as \emph{wheels} in our example, will still be accessible afterward.
 After we move the \emph{engine} field out of the \emph{car} structure, however, the parent variable \emph{car} cannot be used as a whole again.
 Therefore, the compiler will complain that we want to call the \emph{drive} method on the partially moved value \emph{car}.
 
@@ -531,11 +521,11 @@ Rust supports creating immutable and mutable references.
 \paragraph{Lifetimes}
 \label{sec:rust-lifetimes}
 
-One detail we must discuss, before providing details on immutable and mutable references, is that every reference in Rust has a \emph{lifetime} \cite{rust-book}.
+One detail we must discuss before providing details on immutable and mutable references is that every reference in Rust has a \emph{lifetime} \cite{rust-book}.
 References borrow ownership and thus grant temporary access to a data structure \cite{understanding-evolving-rust}.
 A lifetime is a construct that the compiler, or more specifically, its \emph{borrow checker}, uses to ensure that all borrows are valid \cite{rust-by-example}.
-The full form of a reference type including lifetime annotations is \verb|&'a mut T| or \verb|&'a T|, where \verb|'a| is the lifetime of the reference.
-Our examples have not included explicit lifetime annotations until now, because the compiler uses some conventions to elide them.
+The full form of a reference type, including lifetime annotations, is \verb|&'a mut T| or \verb|&'a T|, where \verb|'a| is the lifetime of the reference.
+Our examples have not included explicit lifetime annotations until now because the compiler uses some conventions to elide them.
 To ensure references get used correctly, the compiler enforces the following two constraints \cite{understanding-evolving-rust}:
 \begin{enumerate}
   \item The reference can only be used while its lifetime is ongoing, and
@@ -560,7 +550,7 @@ fn longest<'a>(s1: &'a str, s2: &'a str) -> &'a str {
   }
 }
 \end{lstlisting}
-If we ommit the lifetime annotations \verb|'a|, the compiler will tell us that the return type of the \verb|longest| function contains a borrowed value, but it is unclear whether it is borrowed from \emph{s1} or \emph{s2}.
+If we omit the lifetime annotations \verb|'a|, the compiler will tell us that the return type of the \verb|longest| function contains a borrowed value, but it is unclear whether it is borrowed from \emph{s1} or \emph{s2}.
 In other words, the compiler requires that \emph{s1} and \emph{s2} have to live at least as long as lifetime \verb|'a|.
 
 
@@ -569,7 +559,7 @@ In other words, the compiler requires that \emph{s1} and \emph{s2} have to live 
 Immutable references can be seen as read-only references.
 They are acquired using the \verb|&| operator and dereferenced using the \verb|*| operator.
 The borrowed value that an immutable reference refers to may not be modified.
-Otherwise the program will not compile.
+Otherwise, the program will not compile.
 
 \begin{lstlisting}[language=Rust]
 let s = String::from("hello");
@@ -605,7 +595,7 @@ During this time, no further immutable or mutable references are allowed.
 This restriction exists to identify and prevent \emph{data races} at compile time, which can cause undefined behavior.
 A data race occurs when two or more pointers access the same data simultaneously, at least one of the pointers is being used to write the data, and there exists no mechanism to synchronize access to the data \cite{rust-book}.
 
-However, the following code example \cite{rust-book} shows that it is important to note that the creation of multiple mutable and immutable references, with lifetimes that do not overlap, is allowed.
+However, the following code example \cite{rust-book} shows that it is important to note that the creation of multiple mutable and immutable references with lifetimes that do not overlap is allowed.
 
 \begin{lstlisting}[language=Rust]
 let mut s = String::from("hello");
@@ -637,7 +627,7 @@ Since \emph{vptr} is a mutable reference to \emph{v}, according to the second li
 However, this condition is violated in line 3, when another reference to \emph{v} is created, which implies that \emph{v} is used.
 Therefore, the program does not compile.
 
-By reordering lines 2 and 3, the lifetimes of the two mutable references will no longer overlap, allowing for successful compilation of the program.
+By reordering lines 2 and 3, the lifetimes of the two mutable references will no longer overlap, allowing for a successful compilation of the program.
 \begin{lstlisting}[language=Rust]
 let mut v = vec![10, 11];
 Vec::push(&mut v, 12); // lifetime 'b
@@ -693,11 +683,11 @@ let s_moved = s; // 's' is moved
 \end{lstlisting}
 
 Instead of using type-specific constructors and assignment operators, in Rust, we \emph{clone} a value to copy it (stack-based primitives are copied automatically without an explicit clone) or directly \emph{move} it without additional syntax.
-In C++, we must use \verb|std::move| to move a named value, which simply casts it to an R-value reference, to indicate to the compiler that the move constructor for the specific type should be called \cite{cpp-rust-ownership}.
+In C++, we must use \verb|std::move| to move a named value, which casts it to an R-value reference, to indicate to the compiler that the move constructor for the specific type should be called \cite{cpp-rust-ownership}.
 After the move of \emph{s} into \emph{s\_moved} in Rust, the compiler will not allow another use of the moved-from object \emph{s}, as its lifetime has ended.
 In contrast, a \verb|std::move| in C++ has no formal effect on the lifetime of the moved-from object \emph{s}.
 This means that the object \emph{s} can still be used after being moved, even though there is no guarantee by the compiler that it is still valid, because there exists no consistent specification on how move constructors or assignment operators should be implemented.
-We can conclude that Rust, in contrast to C++, adds safety to its move sematics through destructive moves enforced by the compiler \cite{cpp-rust-ownership}.
+We can conclude that Rust, in contrast to C++, adds safety to its move semantics through destructive moves enforced by the compiler \cite{cpp-rust-ownership}.
 
 We have only focused on the move semantics in the two languages, but there are many more ownership-related comparisons (smart pointers, shared ownership, mutable references etc.) between the two languages that are out of the scope of this paper.
 
@@ -708,7 +698,8 @@ We have only focused on the move semantics in the two languages, but there are m
 In summary, programming languages based on ownership types can eliminate many aliasing-related issues by enforcing strict rules on the existence and behavior of references to values.
 The \emph{owners-as-dominators} and \emph{owners-as-modifiers} models enforce different levels of strictness on both \emph{where} and \emph{how} references may be used.
 Furthermore, an enhanced version of the ownership concept is integral to the Rust programming language.
-Compared to more commonly used low-level programming languages like C++, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time, allowing for safe runtime performance and omitting the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform.
+Compared to more commonly used low-level programming languages like C++, Rust introduces many memory-related rules that are strictly enforced by the compiler at compile time.
+This allows for safer runtime performance and omits the need for many manual, rigorous and error-prone memory reference checks that programmers used to have to perform.
 Even though the Rust compiler forces developers to think more intentionally about how they deal with memory through ownership, they will receive helpful compile-time error messages instead of crashes or undefined behavior at runtime if they do something wrong.
 
 It will be interesting to see how Rust's development will continue in the future.
