@@ -99,7 +99,7 @@ Ralf Jung \cite{understanding-evolving-rust} provides the following common examp
 
 First, we will explore how a memory safety problem is created in the following C++ code snippet that does not use the ownership concept.
 
-\begin{lstlisting}[language=C++,captionpos=b,caption={C++ use-after-free}]
+\begin{lstlisting}[language=C++,captionpos=b,caption={C++ use-after-free \cite{understanding-evolving-rust}}]
 std::vector<int> v { 10, 11 };
 int *vptr = &v[1]; // points into v
 v.push_back(12);
@@ -122,7 +122,7 @@ The main problem here is that such memory issues cannot be detected at compile t
 Now, we will demonstrate how ownership types in Rust allow the compiler to detect such a use-after-free bug.
 Consider the following Rust translation of our C++ example:
 
-\begin{lstlisting}[language=Rust,captionpos=b,caption={Rust use-after-free}]
+\begin{lstlisting}[language=Rust,captionpos=b,caption={Rust use-after-free \cite{understanding-evolving-rust}}]
 let mut v = vec![10, 11];
 let vptr = &mut v[1]; // points into v
 v.push(12);
@@ -539,7 +539,7 @@ The lifetime of a reference starts where it is introduced and extends until the 
 
 First, we will provide an example of a program that requires explicit lifetime annotations.
 
-\begin{lstlisting}[language=Rust,captionpos=b,caption={Rust lifetime annotations}]
+\begin{lstlisting}[language=Rust,captionpos=b,caption={Rust lifetime annotations \cite{rust-book}}]
 fn main() {
   let s1 = String::from("short");
   let s2 = String::from("longest");
@@ -619,7 +619,7 @@ Therefore, the lifetimes of the mutable reference and the two immutable referenc
 
 Lifetimes and mutable references also play an important role in explaining how the example from \ref{sec:memory-safety} got rejected by the compiler.
 
-\begin{lstlisting}[language=Rust,captionpos=b,caption={Rust use-after-free with lifetimes}]
+\begin{lstlisting}[language=Rust,captionpos=b,caption={Rust use-after-free with lifetimes \cite{understanding-evolving-rust}}]
 let mut v = vec![10, 11];
 let vptr = &mut v[1]; // lifetime 'a starts
 Vec::push(&mut v, 12); // lifetime 'b
@@ -632,7 +632,7 @@ However, this condition is violated in line 3, when another reference to \emph{v
 Therefore, the program does not compile.
 
 By reordering lines 2 and 3, the lifetimes of the two mutable references will no longer overlap, allowing for a successful compilation of the program.
-\begin{lstlisting}[language=Rust,captionpos=b,caption={Rust use-after-free corrected}]
+\begin{lstlisting}[language=Rust,captionpos=b,caption={Rust use-after-free corrected \cite{understanding-evolving-rust}}]
 let mut v = vec![10, 11];
 Vec::push(&mut v, 12); // lifetime 'b
 let vptr = &mut v[1];  // lifetime 'a starts

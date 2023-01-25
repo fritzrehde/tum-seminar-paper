@@ -1,4 +1,5 @@
-\documentclass[handout]{beamer}
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
 
 \usepackage[utf8]{inputenc}
 \usepackage{listings}
@@ -70,8 +71,8 @@
 \begin{frame}{Memory safety}
 \begin{itemize}
   \item definition: program is memory safe if all memory pointers or references always refer to valid memory
-  \item Google and Microsoft: 70 percent of vulnerabilities due to memory safety issues
-  \item National Security Agency (USA) recommends memory-safe languages (instead of C/C++)
+  % \item Google and Microsoft: 70 percent of vulnerabilities due to memory safety issues
+  % \item National Security Agency (USA) recommends memory-safe languages (instead of C/C++)
   \item examples: buffer overflows, memory leaks, double-free, use-after-free
   \item result: malicious exploits, incorrect program results, "random" crashes
 \end{itemize}
@@ -199,9 +200,9 @@ For \emph{a} to validly reference \emph{b}:
 
 \begin{frame}{Owners-as-dominators: implications}
 \begin{itemize}
-  \item any external reference to an object must go through its owner
-  \item owners-as-dominators: owner is dominator for all of its owned objects
+  \item any external reference to an object's internals must go through its owner
   \item objects are only protected from external access, not internal access
+  % \item owners-as-dominators: owner is dominator for all of its owned objects
   \item model restricts \emph{where} references can point, not \emph{how} references are used
   \item doesn't allow common idioms that involve aliasing
 \end{itemize}
@@ -283,31 +284,36 @@ Same rules as owners-as-dominators, but \emph{a} can also reference \emph{b} thr
 
 \section{Ownership in Rust}
 
-\begin{frame}{From theory to implementation}
+\begin{frame}[fragile]{From theory to implementation}
 \begin{itemize}
   \item Rust's ownership system: extends owners-as-modifiers
   \begin{itemize}
     \item immutable (read-only) and mutable references % (not in owners-as-dominators)
     \item rules for compiler to check validity of references
-    \item extensions:
-    \begin{itemize}
-      \item transferring ownership from one object to another
-      \item object immutability by default
-      % \item Resource Acquisition Is Initialization (similar to C++)
-    \end{itemize}
   \end{itemize}
-  % \item aliasing concept essential to ownership types
-  % \item different ways of implementing aliasing:
-  % \begin{itemize}
-  %   \item pointers: exist in Rust, but their use is not advised
-  %   \item \emph{references}
-  % \end{itemize}
+
+  \pause
   \item ownership rules in Rust:
   \begin{enumerate}
-    \item Each value in Rust has an owner.
+    \item Each value has an owner.
     \item There can only be one owner at a time.
     \item When the owner goes out of scope, the value will be \emph{dropped} (associated memory is freed).
   \end{enumerate}
+  \begin{lstlisting}[language=Rust]
+  { // a is not declared yet
+    let a = 42; // scope of a starts here
+    // do stuff with a
+  } // scope is over => a is no longer valid
+  \end{lstlisting}
+
+  \pause
+  \item Variables are immutable by default
+  \begin{lstlisting}[language=Rust]
+  let a = 42; // immutable
+  a = 24; // invalid
+  let mut b = 42; // mutable
+  b = 24; // valid
+  \end{lstlisting}
 \end{itemize}
 \end{frame}
 
@@ -329,8 +335,8 @@ Heap-based values:
   fn main() {
     let a = String::from("hello world");
     let b = a; // ownership transfer: a is moved into b
+    println!("{}", a); // compiler error: a no longer valid
     let c = take_ownership(b); // b is moved into function
-    println!("{}", b); // compiler error: b no longer valid
   }
   fn take_ownership(s: String) -> String {
     // do something with s
@@ -345,8 +351,8 @@ Heap-based values:
 \begin{frame}[fragile]{Transferring ownership}
 Stack-based primitives: 
 \begin{itemize}
-  \item small, known size at compile time
   \item examples: i32, u8, f64, char, bool etc.
+  \item small, known size at compile time
   \item values are copied by default
 
   \begin{lstlisting}[language=Rust]
@@ -354,47 +360,53 @@ Stack-based primitives:
   let y: u32 = x; // x is copied instead of moved
   println!("x: {}, y: {}", x, y); // x and y valid
   \end{lstlisting}
-  \item stack-based values implement \verb|Copy| trait
+  % \item stack-based values implement \verb|Copy| trait
 \end{itemize}
 \end{frame}
 
 
 \begin{frame}[fragile]{Borrowing}
 \begin{itemize}
+  \item creating a reference in Rust is called \emph{borrowing}
   \item \emph{reference}: an address that points to a value that is owned by another variable
   \item unlike \emph{pointers}, a reference is guaranteed to point to a valid value
-  \item creating a reference in Rust is called \emph{borrowing}
-  \item a reference does not own the value it points to $\rightarrow$ only reference (not the borrowed value) is dropped at the end of the reference's scope
+  % \item a reference does not own the value it points to $\rightarrow$ only reference (not the borrowed value) is dropped at the end of the reference's scope
   \item used for performing operations on values without taking ownership
-  % \item the scope of a reference starts where it is introduced and extends until the last time it is used
-  \item Rust supports immutable (\verb|&|) and mutable (\verb|&mut|) references
-\end{itemize}
-\end{frame}
-
-
-\begin{frame}[fragile]{Lifetimes}
-\begin{itemize}
   \item every reference has a \emph{lifetime}: scope for which reference is valid
-  \item references grant temporary access to a data structure $\rightarrow$ how long is "temporary"?
-  \item construct that the \emph{borrow checker} uses to ensure that all borrows are valid
-  \item compiler uses conventions to elide lifetimes $\rightarrow$ explicit annotations not always required
-  \item program is valid if all of the below hold for all references:
-  \begin{enumerate}
-    \item the reference can only be used while its lifetime is ongoing
-    % \item the original referent is not used at all (for mutable references) or does not get mutated (for immutable references) until the lifetime of the newly created reference has expired.
-    \item immutable reference: the borrowed value does not get mutated during lifetime
-    \item mutable reference: the borrowed value is not used at all during lifetime
-  \end{enumerate}
-  % \item lifetime annotations: \verb|&'a T| or \verb|&'a mut T| , where \verb|'a| is the lifetime of the reference
+  \item lifetime of borrowed value must be at least as long as lifetime of reference
+  % \item a reference does not own the value it points to
+  % \item the scope of a reference starts where it is introduced and extends until the last time it is used
+  % \item Rust supports immutable (\verb|&|) and mutable (\verb|&mut|) references
 \end{itemize}
 \end{frame}
+
+
+% \begin{frame}[fragile]{Lifetimes}
+% \begin{itemize}
+%   \item references grant temporary access to values $\rightarrow$ how long is "temporary"?
+%   \item every reference has a \emph{lifetime}: scope for which reference is valid
+%   \item \emph{borrow checker} uses lifetimes to ensure that all borrows are valid
+
+%   % \item program is valid if all of the below hold for all references:
+%   % \begin{enumerate}
+%   %   \item the reference can only be used while its lifetime is ongoing
+%   %   % \item the original referent is not used at all (for mutable references) or does not get mutated (for immutable references) until the lifetime of the newly created reference has expired.
+%   %   \item immutable reference: the borrowed value does not get mutated during lifetime
+%   %   \item mutable reference: the borrowed value is not used at all during lifetime
+%   % \end{enumerate}
+
+%   % \item lifetime annotations: \verb|&'a T| or \verb|&'a mut T| , where \verb|'a| is the lifetime of the reference
+%   % \item compiler uses conventions to elide lifetimes $\rightarrow$ explicit annotations not always required
+% \end{itemize}
+% \end{frame}
 
 
 \begin{frame}[fragile]{Borrowing: immutable references}
 \begin{itemize}
   \item read-only/shared references $\rightarrow$ compiler disallows modifying borrowed value
   \item \verb|&| and \verb|*| operators
-  \item unlimited amount of immutable references to same value are allowed (if no mutable references)
+  \item borrow-checker rule: the borrowed value does not get mutated during lifetime
+  \item unlimited amount of immutable references to same value (if no mutable references or mutations)
 
   \begin{lstlisting}[language=Rust]
   let s = String::from("hello");
@@ -423,11 +435,11 @@ Stack-based primitives:
 
 \begin{frame}[fragile]{Borrowing: mutable references}
 \begin{itemize}
-  \item \emph{data races}: multiple pointers access the same data simultaneously and at least one is writing to the data
-  \item goal: prevent \emph{data races} at compile time
-    % TODO: latex beamer make stand out/highlight
-  \item lifetime of mutable reference may not overlap with lifetime of any other (immutable or mutable) reference
-  \item only one mutable reference to a value allowed at any given time
+  % \item \emph{data races}: multiple pointers access the same data simultaneously and at least one is writing to the data
+  % \item goal: prevent \emph{data races} at compile time
+  \item borrow-checker rule: the borrowed value is not used at all during lifetime
+  % \item lifetime of mutable reference may not overlap with lifetime of any other (immutable or mutable) reference
+  % \item only one mutable reference to a value allowed at any given time
 
   \begin{lstlisting}[language=Rust]
   let mut v = vec![10, 11];
@@ -458,7 +470,7 @@ Stack-based primitives:
   \end{lstlisting}
 
   \item Will it compile? \pause No.
-  \item Why not? \pause Borrowed value 'b' does not live as long as the reference 'a'.
+  \item Why not? Borrowed value 'b' does not live as long as the reference 'a'.
   \item Refactored version that compiles:\pause
 
   \begin{lstlisting}[language=Rust]
@@ -474,58 +486,81 @@ Stack-based primitives:
 \begin{frame}[fragile]{Borrowing: examples}
 \begin{itemize}
   \begin{lstlisting}[language=Rust]
-  let mut s = String::from("hello");
-  let r1 = &s;
-  let r2 = &s;
-  println!("{} and {}", *r1, *r2);
-  let r3 = &mut s;
-  r3.push_str(" world");
-  \end{lstlisting}
-
-  \item Will it compile? \pause Yes.
-  \item Why? \pause Lifetimes of immutable and mutable references don't overlap.
-
-  \begin{lstlisting}[language=Rust]
-  let mut s = String::from("hello");
-  let r1 = &s; // lifetime 'a starts
-  let r2 = &s; // lifetime 'b starts
-  println!("{} and {}", *r1, *r2);
-  // lifetimes 'a and 'b end
-  let r3 = &mut s; // lifetime 'c starts
-  r3.push_str(" world");
-  \end{lstlisting}
-\end{itemize}
-\end{frame}
-
-
-\begin{frame}[fragile]{Borrowing: examples}
-\begin{itemize}
-  \begin{lstlisting}[language=Rust]
-  let mut s = String::from("hello");
+  let mut s = String::from("hello world");
   let r = &s;
-  s.push_str(" world");
+  s = String::from("hello world again");
   println!("{}", *r);
   \end{lstlisting}
 
   \item Will it compile? \pause No.
-  \item Why not? \pause Lifetimes of mutable and immutable references overlap (cannot borrow 's' as mutable because it is also borrowed as immutable)
+  \item Why not? Violated rule: the borrowed value does not get mutated during lifetime
   \item Refactored version that compiles:\pause
 
   \begin{lstlisting}[language=Rust]
-  let mut s = String::from("hello");
-  s.push_str(" world"); // lifetime 'a starts and ends
-  let r = &s; // lifetime 'b starts
-  println!("{}", *r); // lifetime 'b ends
+  let mut s = String::from("hello world");
+  s = String::from("hello world again");
+  let r = &s;
+  println!("{}", *r);
   \end{lstlisting}
 \end{itemize}
 \end{frame}
+
+
+% \begin{frame}[fragile]{Borrowing: examples}
+% \begin{itemize}
+%   \begin{lstlisting}[language=Rust]
+%   let mut s = String::from("hello");
+%   let r1 = &s;
+%   let r2 = &s;
+%   println!("{} and {}", *r1, *r2);
+%   let r3 = &mut s;
+%   r3.push_str(" world");
+%   \end{lstlisting}
+
+%   \item Will it compile? \pause Yes.
+%   \item Why? \pause Lifetimes of immutable and mutable references don't overlap.
+
+%   \begin{lstlisting}[language=Rust]
+%   let mut s = String::from("hello");
+%   let r1 = &s; // lifetime r1 starts
+%   let r2 = &s; // lifetime r2 starts
+%   println!("{} and {}", *r1, *r2);
+%   // lifetimes r1 and r2 end
+%   let r3 = &mut s; // lifetime r3 starts
+%   r3.push_str(" world");
+%   \end{lstlisting}
+% \end{itemize}
+% \end{frame}
+
+
+% \begin{frame}[fragile]{Borrowing: examples}
+% \begin{itemize}
+%   \begin{lstlisting}[language=Rust]
+%   let mut s = String::from("hello");
+%   let r = &s;
+%   s.push_str(" world");
+%   println!("{}", *r);
+%   \end{lstlisting}
+
+%   \item Will it compile? \pause No.
+%   \item Why not? \pause Lifetimes of mutable and immutable references overlap (cannot borrow 's' as mutable because it is also borrowed as immutable)
+%   \item Refactored version that compiles:\pause
+
+%   \begin{lstlisting}[language=Rust]
+%   let mut s = String::from("hello");
+%   s.push_str(" world"); // lifetime starts and ends
+%   let r = &s; // lifetime r starts
+%   println!("{}", *r); // lifetime r ends
+%   \end{lstlisting}
+% \end{itemize}
+% \end{frame}
 
 
 \section{Evaluation}
 
 \begin{frame}[fragile]{Another implementation: C++}
 \begin{itemize}
-  \item integration of move semantics into language: Rust early on, C++ late in its life
+  % \item integration of move semantics into language: Rust early on, C++ late in its life
   \item move semantics closely related to constructors and assignment operators (overloaded for classes)
   \item different reference types based on value categories:
   \begin{itemize}
@@ -608,55 +643,60 @@ Rust: safer move sematics through destructive moves enforced by the compiler
 % \section{Extra slides}
 
 
-% \begin{frame}[fragile]{Lifetimes: example}
-% \begin{itemize}
-%   \begin{lstlisting}[language=Rust]
-%   fn main() {
-%     let s1 = String::from("short");
-%     let s2 = String::from("longest");
-%     let longest = longest(&s1, &s2);
-%     println!("longest string: '{}'", longest);
-%   }
-%   fn longest<'a>(s1: &'a str, s2: &'a str) -> &'a str {
-%     if s1.len() > s2.len() {
-%       s1
-%     } else {
-%       s2
-%     }
-%   }
-%   \end{lstlisting}
-%   \item longest function: return type contains a borrowed value, but unclear whether it is borrowed from 's1' or 's2'
-%   \item 's1' and 's2' have to live at least as long as lifetime 'a
-% \end{itemize}
-% \end{frame}
+\begin{frame}[fragile]{Lifetimes: example}
+\begin{itemize}
+  \begin{lstlisting}[language=Rust]
+  fn main() {
+    let s1 = String::from("short");
+    let s2 = String::from("longest");
+    let longest = longest(&s1, &s2);
+    println!("longest string: '{}'", longest);
+  }
+  fn longest<'a>(s1: &'a str, s2: &'a str) -> &'a str {
+    if s1.len() > s2.len() {
+      s1
+    } else {
+      s2
+    }
+  }
+  \end{lstlisting}
+  \item longest function: return type contains a borrowed value, but unclear whether it is borrowed from 's1' or 's2'
+  \item 's1' and 's2' have to live at least as long as lifetime 'a
+\end{itemize}
+\end{frame}
 
 
-% \begin{frame}{Lifetime elision}
-% Here are the three rules:
-% \begin{itemize}
-%   \item Each elided lifetime in a function’s arguments becomes a distinct lifetime parameter.
-%   \item If there is exactly one input lifetime, elided or not, that lifetime is assigned to all elided lifetimes in the return values of that function.
-%   \item If there are multiple input lifetimes, but one of them is &self or &mut self, the lifetime of self is assigned to all elided output lifetimes.
-% \end{itemize}
-% Otherwise, it is an error to elide an output lifetime.
-% \end{frame}
+\begin{frame}[fragile]{Lifetime elision}
+\begin{itemize}
+  \item lifetime annotations: \verb|&'a T| or \verb|&'a mut T| , where \verb|'a| is the lifetime of the reference
+  \item compiler uses conventions to elide lifetimes $\rightarrow$ explicit annotations not always required
+  \item Here are the three rules:
+  \begin{itemize}
+    \item Each elided lifetime in a function’s arguments becomes a distinct lifetime parameter.
+    \item If there is exactly one input lifetime, elided or not, that lifetime is assigned to all elided lifetimes in the return values of that function.
+    \item If there are multiple input lifetimes, but one of them is &self or &mut self, the lifetime of self is assigned to all elided output lifetimes.
+  \end{itemize}
+  \item Otherwise, it is an error to elide an output lifetime.
+\end{itemize}
+\end{frame}
 
-% \begin{frame}[fragile]{Lifetime elision: examples}
-% \begin{lstlisting}[language=Rust]
-% fn print(s: &str); // elided
-% fn print<'a>(s: &'a str); // expanded
 
-% fn debug(lvl: u32, s: &str); // elided
-% fn debug<'a>(lvl: u32, s: &'a str); // expanded
+\begin{frame}[fragile]{Lifetime elision: examples}
+\begin{lstlisting}[language=Rust]
+fn print(s: &str); // elided
+fn print<'a>(s: &'a str); // expanded
 
-% fn substr(s: &str, until: u32) -> &str; // elided
-% fn substr<'a>(s: &'a str, until: u32) -> &'a str; // expanded
+fn debug(lvl: u32, s: &str); // elided
+fn debug<'a>(lvl: u32, s: &'a str); // expanded
 
-% fn get_str() -> &str; // ILLEGAL, no inputs
+fn substr(s: &str, until: u32) -> &str; // elided
+fn substr<'a>(s: &'a str, until: u32) -> &'a str; // expanded
 
-% fn frob(s: &str, t: &str) -> &str; // ILLEGAL, two inputs
-% fn frob<'a, 'b>(s: &'a str, t: &'b str) -> &str; // Expanded: Output lifetime is ambiguous
-% \end{lstlisting}
-% \end{frame}
+fn get_str() -> &str; // ILLEGAL, no inputs
+
+fn frob(s: &str, t: &str) -> &str; // ILLEGAL, two inputs
+fn frob<'a, 'b>(s: &'a str, t: &'b str) -> &str; // Expanded: Output lifetime is ambiguous
+\end{lstlisting}
+\end{frame}
 
 \end{document}
