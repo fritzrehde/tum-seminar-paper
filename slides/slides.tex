@@ -699,4 +699,14 @@ fn frob<'a, 'b>(s: &'a str, t: &'b str) -> &str; // Expanded: Output lifetime is
 \end{lstlisting}
 \end{frame}
 
+
+\begin{frame}[fragile]{Borrow-checker rules}
+  program is valid if all of the below hold for all references:
+  \begin{enumerate}
+    \item the reference can only be used while its lifetime is ongoing
+    \item the original referent is not used at all (for mutable references) or does not get mutated (for immutable references) until the lifetime of the newly created reference has expired.
+  \end{enumerate}
+\end{frame}
+
+
 \end{document}
