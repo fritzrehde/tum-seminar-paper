@@ -709,4 +709,27 @@ fn frob<'a, 'b>(s: &'a str, t: &'b str) -> &str; // Expanded: Output lifetime is
 \end{frame}
 
 
+\begin{frame}[fragile]{Formal lifetime rules}
+\begin{itemize}
+  \item Association rule:
+  \begin{itemize}
+    \item $x: \&'a T \;\Rightarrow\;scope(\text{x})\subseteq\text{'a}$
+    \item A lifetime is a superset of the scope of its associated reference.}
+  \end{itemize}
+
+  \item Reference rule:
+  \begin{itemize}
+    \item $x: \&'a T = \&y \;\Rightarrow\;\text{'a}\subseteq scope(\text{y})$
+    \item A lifetime associated with a reference is a subset of the scope of the referent object.
+  \end{itemize}
+
+  \item Assignment rule:
+  \begin{itemize}
+    \item $x: \&'a S = y: \&'b T \;\Rightarrow\;\text{'a}\subseteq\text{'b}$
+    \item The lifetime associated with the assignee is a subset of the lifetime associated with the assigner.
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+
 \end{document}
