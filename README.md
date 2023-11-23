@@ -1,6 +1,7 @@
 # Ownership types in theory and practice (in Rust)
 
-This repo contains my work on the topic "Ownership types in theory and practice (in Rust)" for the "Next-Gen Programming Interfaces and Compilers" seminar course I took at the Technical University of Munich (TUM) in the winter semester 22/23.
+This repo contains my work on the topic "Ownership types in theory and practice (in Rust)" for the "Next-Gen Programming Interfaces and Compilers" (see the [course's website](https://db.in.tum.de/teaching/ws2223/seminarCompilers/)) seminar course I took at the Technical University of Munich (TUM) in the winter semester 22/23.
+
 In this course, we were required to write a 10-page scientific research paper (see [paper.pdf](pdfs/paper.pdf)), and subsequently hold a presentation on its topic, supported by slides (see [slides.pdf](pdfs/slides.pdf)).
 
 This is the abstract of the paper:
